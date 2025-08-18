@@ -1,0 +1,37 @@
+# Mac OS X
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# PowerShell
+*.ps1xml
+*.psd1
+*.psm1
+*.pdb
+ps_modules/
+Modules/
+profile.ps1
+*.ps1-help.xml
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+
+# Visual Studio Code
+.vscode/
+
+# PowerShell Gallery packaging
+*.nupkg
+*.nuspec
+Package/
+
+# Pester
+*.Tests.ps1
