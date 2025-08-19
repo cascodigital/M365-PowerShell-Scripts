@@ -23,3 +23,27 @@ Este script PowerShell foi criado para simplificar e acelerar a análise de Logs
 1.  Baixe o script `Search-DetailedWinEvent.ps1`.
 2.  Abra o PowerShell como Administrador.
 3.  Execute o script e siga as instruções no console para inserir os Event IDs e as datas.
+
+---
+
+## procura_arquivos.ps1
+
+Este script interativo localiza arquivos por nome no OneDrive for Business de um usuário específico, utilizando o Microsoft Graph para realizar a busca de forma eficiente.
+
+### Funcionalidades Principais
+- **Busca Interativa:** Solicita o e-mail do usuário alvo e o nome/filtro do arquivo diretamente no console.
+- **Suporte a Wildcards:** Permite buscas flexíveis utilizando asteriscos (`*`). Se nenhum wildcard for usado, o script o adiciona automaticamente para uma busca mais ampla.
+- **Múltiplos Drives:** O script identifica e pesquisa em todos os drives associados ao usuário (ex: OneDrive pessoal, drives de sites do SharePoint vinculados).
+- **Saída Detalhada:** Exibe o caminho completo do arquivo, drive de origem, tamanho, data da última modificação e o ID do item.
+- **Detecção de Duplicatas:** Alerta o administrador caso arquivos com o mesmo nome sejam encontrados em locais diferentes.
+- **Conexão Inteligente:** Verifica se já existe uma conexão ativa com o Microsoft Graph antes de solicitar uma nova.
+
+### Pré-requisitos
+- Módulo PowerShell `Microsoft.Graph.PowerShell` instalado (`Install-Module -Name Microsoft.Graph`).
+- Permissões de API do Microsoft Graph: O administrador que executa o script precisa consentir com as permissões **User.Read.All** e **Files.Read.All**. O script solicitará isso na primeira conexão.
+
+### Como Usar
+1.  Baixe o script `procura_arquivos.ps1`.
+2.  Abra o PowerShell.
+3.  Execute o script: `.\procura_arquivos.ps1`
+4.  Siga as instruções no console para inserir o e-mail do usuário e o filtro de busca para o nome do arquivo.
