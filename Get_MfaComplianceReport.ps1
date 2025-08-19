@@ -532,9 +532,9 @@ try {
 
 
 
-Empresa: Geraldo Gama
+Empresa: 
 
-Administrador: admin@geraldogama.com.br
+Administrador: admin@
 
 Data da Verificação: $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")
 
@@ -628,7 +628,7 @@ OBSERVAÇÕES TÉCNICAS:
 
 Relatório gerado automaticamente.
 
-Administrador: admin@geraldogama.com.br
+Administrador: admin@
 
 "@
 
