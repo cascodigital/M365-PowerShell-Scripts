@@ -95,3 +95,51 @@ Este script PowerShell foi criado para simplificar e acelerar a análise de Logs
 1.  Baixe o script `Search-DetailedWinEvent.ps1`.
 2.  Abra o PowerShell como Administrador.
 3.  Execute o script e siga as instruções no console.
+
+---
+
+## BuscaLogon.ps1 (ver arquivo gpo_logons.rar)
+
+Este script realiza uma busca forense por eventos de logon (ID 4624) em um computador específico ou em **todos os computadores ativos do domínio**, focando em tipos de logon que indicam atividade humana direta (incluindo logons offline/cacheados). O objetivo é consolidar, a partir de uma máquina central, os eventos ocorridos em múltiplos endpoints.
+
+### Funcionalidades Principais
+- **Escopo Flexível:** A busca pode ser feita em um único computador ou em todo o domínio.
+- **Foco em Logons Relevantes:** Filtra por tipos de logon Interativo(2), Remote(10), Desbloqueio(7) e Offline/Cache(11).
+- **Gerenciamento de Timeout:** Usa jobs em paralelo com tempo limite para não travar em máquinas que não respondem.
+- **Relatório em Excel:** Exporta os resultados para um arquivo `.xlsx` detalhado.
+- **Resumo no Console:** Exibe um sumário da coleta (sucesso, offline, falhas) no terminal.
+
+### Pré-requisitos
+- **GPO de Auditoria (Essencial):** As máquinas alvo **devem** ter a política de auditoria habilitada para registrar os eventos de logon. Uma GPO pronta (`gpo_logons.rar`) está incluída neste repositório.
+- Módulo PowerShell `ActiveDirectory`.
+- Módulo PowerShell `ImportExcel` (`Install-Module -Name ImportExcel`).
+- Execução como **Administrador** em uma máquina com as ferramentas RSAT (AD).
+
+### Como Usar
+1.  **Primeiro, importe a GPO:** Descompacte `gpo_logons.rar` e importe a política de grupo usando o GPMC no seu Domain Controller. Vincule a GPO à OU que contém os computadores a serem auditados.
+2.  Aguarde a replicação da GPO nos clientes.
+3.  Execute o script `BuscaLogon.ps1`.
+4.  Siga as instruções: informe o alvo ('T' para todos), a data inicial e a data final.
+5.  O relatório será salvo em `C:\Temp\EventLog_Exports`.
+
+---
+
+## GPO - Auditoria de Logon (gpo_logons.rar) (ver BuscaLogon.ps1)
+
+Este é um backup de uma Group Policy Object (GPO) pré-configurada para habilitar as políticas de auditoria necessárias para o funcionamento do script `BuscaLogon.ps1`.
+
+### Funcionalidades Principais
+- **Ativação da Auditoria Avançada:** Habilita as subcategorias de auditoria essenciais para registrar o Evento ID 4624, como "Logon", "Logon Especial", "Criação de Processos", etc.
+- **Habilitação do WinRM:** Configura o serviço de Gerenciamento Remoto do Windows e as regras de firewall necessárias para que o script possa consultar os logs remotamente.
+
+### Pré-requisitos
+- Um ambiente de Active Directory Domain Services.
+- Permissões de Administrador de Domínio para manipular GPOs.
+
+### Como Usar
+1.  Descompacte o arquivo `gpo_logons.rar`.
+2.  No seu Domain Controller, abra o **"Gerenciamento de Política de Grupo"** (GPMC).
+3.  Clique com o botão direito em **"Objetos de Política de Grupo"** e selecione **"Novo"** para criar uma GPO vazia (ex: "Auditoria de Logon de Estações").
+4.  Clique com o botão direito na GPO recém-criada e selecione **"Importar Configurações..."**.
+5.  Siga o assistente, apontando para a pasta que foi descompactada.
+6.  Após a importação, **vincule a GPO** à(s) OU(s) que contêm os computadores que serão auditados.
