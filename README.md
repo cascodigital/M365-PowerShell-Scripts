@@ -4,17 +4,18 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 
 ## Tabela de Conteúdos
 
-1. [Get_MfaComplianceReport.ps1](#get_mfacompliancereportps1)
+1. [Ver_MfaComplianceReport.ps1](#ver_mfacompliancereportps1)
 2. [Relacao_Confianca.ps1](#relacao_confiancaps1)
 3. [Procura_Arquivos.ps1](#procura_arquivosps1)
-4. [Search-Events.ps1](#search-eventsps1)
+4. [Procura_Eventos.ps1](#procura_eventosps1)
 5. [BuscaLogon.ps1](#buscalogonps1)
 6. [GPO - Auditoria de Logon (gpo_logons.rar)](#gpo---auditoria-de-logon-gpo_logonsrar)
-7. [AlterarPerfilDeRede.ps1](#alterarperfildereds1)
+7. [AlterarPerfilDeRede.ps1](#alterarperfilderedps1)
+8. [Alterar_Senhas_365.ps1](#alterar_senhas_365ps1)
 
 ---
 
-## Get_MfaComplianceReport.ps1
+## Ver_MfaComplianceReport.ps1
 
 Este script gera um relatório de conformidade sobre o status do MFA no Microsoft 365, focando em **contas de usuários reais** e, ao final, entra em um **modo de consulta interativo** para análise detalhada de contas específicas.
 
@@ -39,9 +40,9 @@ Este script gera um relatório de conformidade sobre o status do MFA no Microsof
 
 ### Como Usar
 
-1. Baixe o script e renomeie-o para `Get-MfaComplianceReport.ps1`.
+1. Baixe o script e renomeie-o para `Ver-MfaComplianceReport.ps1`.
 2. **Importante**: Abra o script e personalize os filtros de exclusão na seção `# 2. Obter usuários` para corresponder aos padrões de nomes de contas de serviço da sua organização.
-3. Abra o PowerShell e execute o script: `.\Get-MfaComplianceReport.ps1`
+3. Abra o PowerShell e execute o script: `.\Ver-MfaComplianceReport.ps1`
 4. Após a geração dos relatórios, o script entrará no modo de consulta. Digite o email de um usuário para ver seus métodos de MFA em detalhe ou pressione ENTER para sair.
 
 ---
@@ -100,7 +101,7 @@ Este script interativo localiza arquivos por nome no **OneDrive for Business** d
 
 ---
 
-## Search-Events.ps1
+## Procura_Eventos.ps1
 
 Este script PowerShell foi criado para simplificar e acelerar a análise de **Logs de Eventos do Windows**, permitindo a busca por múltiplos Event IDs em um intervalo de datas e exportando os resultados para um arquivo Excel (`.xlsx`).
 
@@ -118,7 +119,7 @@ Este script PowerShell foi criado para simplificar e acelerar a análise de **Lo
 
 ### Como Usar
 
-1. Baixe o script `Search-DetailedWinEvent.ps1`.
+1. Baixe o script `Procura_Eventos.ps1`.
 2. Abra o PowerShell como Administrador.
 3. Execute o script e siga as instruções no console.
 
@@ -199,6 +200,50 @@ Este script interativo permite visualizar e alterar a categoria de **perfis de c
 2. Clique com o botão direito no arquivo e selecione "Executar com o PowerShell" ou abra uma janela do PowerShell como Administrador.
 3. Execute o script: `.\AlterarPerfilDeRede.ps1`
 4. Siga as instruções no console para selecionar a interface e a nova categoria de rede.
+
+---
+
+## Alterar_Senhas_365.ps1
+
+Este script automatiza a geração e aplicação de **senhas aleatórias** para usuários específicos do Microsoft 365, filtrando por domínio. Ideal para operações de reset em massa ou padronização de senhas temporárias.
+
+### Funcionalidades Principais
+
+- **Geração de Senhas Seguras**: Cria senhas no formato **2 maiúsculas + 4 números + 2 minúsculas** (ex: AB1234cd).
+- **Filtro por Domínio**: Permite selecionar usuários de um domínio específico para a operação.
+- **Filtro de Usuários Ativos**: Processa apenas contas habilitadas, ignorando usuários desativados.
+- **Confirmação Prévia**: Exibe a lista de usuários que serão afetados antes de executar as alterações.
+- **Relatório Detalhado**: Gera um arquivo CSV com todas as senhas alteradas e status das operações.
+- **Senhas Definitivas**: Define as senhas como permanentes - usuários não precisam alterá-las no próximo logon.
+- **Controle de Throttling**: Implementa pausas entre requisições para evitar limitação de API.
+
+### Pré-requisitos
+
+- Módulo PowerShell **Microsoft.Graph** instalado (`Install-Module -Name Microsoft.Graph`).
+- **Permissões Administrativas Elevadas**: Executar com conta que possua um dos seguintes roles:
+  - **Global Administrator** (recomendado)
+  - **User Administrator**
+  - **Password Administrator**
+- **Permissões de API do Microsoft Graph**: `User.ReadWrite.All`, `Directory.ReadWrite.All`, `UserAuthenticationMethod.ReadWrite.All`, `Directory.AccessAsUser.All`.
+
+### Como Usar
+
+1. Baixe o script `Alterar_Senhas_365.ps1`.
+2. **IMPORTANTE**: Execute com uma conta administrativa adequada no tenant M365.
+3. Abra o PowerShell como Administrador.
+4. Execute o script: `.\Alterar_Senhas_365.ps1`
+5. Siga as instruções:
+   - Autentique-se com suas credenciais administrativas do M365
+   - Informe o domínio alvo (ex: `empresa.com.br`)
+   - Confirme a lista de usuários que serão processados
+6. O script irá processar todos os usuários e gerar um arquivo CSV com os resultados.
+
+### ⚠️ Avisos Importantes
+
+- **Teste primeiro**: Execute em um ambiente de teste ou com um usuário específico antes de aplicar em larga escala.
+- **Backup**: Considere documentar as senhas atuais se necessário para rollback.
+- **Comunicação**: Notifique os usuários sobre a alteração das senhas antes de executar.
+- **Segurança**: O arquivo CSV contém senhas em texto plano - trate com máxima segurança.
 
 ---
 
