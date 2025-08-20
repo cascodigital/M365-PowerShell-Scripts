@@ -12,7 +12,6 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 6. [GPO - Auditoria de Logon (gpo_logons.rar)](#gpo---auditoria-de-logon-gpo_logonsrar)
 7. [AlterarPerfilDeRede.ps1](#alterarperfilderedps1)
 8. [Alterar_Senhas_365.ps1](#alterar_senhas_365ps1)
-
 ---
 
 ## Ver_MfaComplianceReport.ps1
