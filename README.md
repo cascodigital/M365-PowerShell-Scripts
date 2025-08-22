@@ -13,6 +13,7 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 7.  [Buscar_Logon.ps1](#buscar_logonps1)
 8.  [GPO - Auditoria de Logon (gpo_logons.rar)](#gpo---auditoria-de-logon-gpo_logonsrar)
 9.  [AlterarPerfilDeRede.ps1](#alterarperfilderedeps1)
+10. [Ver_Emails.ps1](#ver_emailsps1)
 
 ---
 
@@ -38,6 +39,45 @@ Gera um relatório de conformidade sobre o status do MFA no Microsoft 365, focan
 1.  Abra o script e personalize os filtros de exclusão de contas de serviço.
 2.  Execute no PowerShell: `.\Ver-MfaComplianceReport.ps1`.
 3.  Após a geração dos relatórios, digite o email de um usuário para ver detalhes ou pressione ENTER para sair.
+
+---
+
+## Ver_Emails.ps1
+
+Gera um **relatório completo de todos os e-mails vigentes** na organização Microsoft 365, categorizando usuários, grupos, caixas compartilhadas e aliases. Ideal para atender solicitações de levantamento de endereços de e-mail ativos.
+
+### Funcionalidades Principais
+
+* **Categorização Inteligente**: Separa automaticamente usuários ativos, inativos, externos, grupos e caixas compartilhadas.
+* **Identificação de Tipos de Grupo**: Distingue entre Microsoft 365, Teams, Listas de Distribuição e grupos de Segurança.
+* **Detecção de Aliases**: Identifica apelidos de e-mail tanto de usuários quanto de grupos através dos ProxyAddresses.
+* **Relatório Executivo**: Cria aba específica com **apenas e-mails vigentes** para apresentação ao cliente.
+* **Excel Organizado**: Gera arquivo Excel com múltiplas abas categorizadas e resumo executivo.
+* **Filtragem de Usuários Externos**: Remove automaticamente convidados e contas `#EXT#` do relatório principal.
+
+### Pré-requisitos
+
+* Módulos PowerShell: `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `ImportExcel`.
+* Permissões de API do Microsoft Graph: `User.Read.All`, `Group.Read.All`, `Mail.Read`.
+
+### Como Usar
+
+1.  Execute no PowerShell: `.\Ver_Emails.ps1`.
+2.  Aguarde a coleta de dados (pode levar alguns minutos em organizações grandes).
+3.  O script gerará um arquivo Excel com timestamp no nome.
+4.  **Para o cliente**: Use as abas `RESPOSTA_CLIENTE` e `RESUMO_EXECUTIVO`.
+5.  **Para análise técnica**: Consulte as abas numeradas com detalhamentos.
+
+### Estrutura do Relatório
+
+* **RESPOSTA_CLIENTE**: Lista limpa apenas dos e-mails funcionais
+* **RESUMO_EXECUTIVO**: Totais por categoria para apresentação
+* **1-Usuários_Ativos**: Funcionários com licença ativa
+* **2-Usuários_Sem_Licença**: Possíveis ex-funcionários
+* **3-Usuários_Externos**: Convidados e contas externas
+* **4-Grupos**: Todos os tipos (Microsoft 365, Teams, Distribuição)
+* **5-Caixas_Compartilhadas**: E-mails genéricos compartilhados
+* **6-Aliases**: Apelidos e endereços alternativos
 
 ---
 
