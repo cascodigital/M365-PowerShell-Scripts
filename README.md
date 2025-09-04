@@ -1,283 +1,133 @@
 # M365-PowerShell-Scripts
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![PowerShell: 7.5+](https://img.shields.io/badge/PowerShell-7.5%2B-blue.svg)
+
 Uma coleção de scripts PowerShell para automação e administração de ambientes Microsoft 365 e infraestrutura local (Active Directory), utilizando os módulos `Microsoft.Graph` e outros.
 
-## Tabela de Conteúdos
-
-1.  [Ver_MfaComplianceReport.ps1](#ver_mfacompliancereportps1)
-2.  [Alterar_Senhas_365.ps1](#alterar_senhas_365ps1)
-3.  [Procura_Arquivos.ps1](#procura_arquivosps1)
-4.  [Remover_Email.ps1](#remover_emailps1)
-5.  [Relacao_Confianca.ps1](#relacao_confiancaps1)
-6.  [Procura_Eventos.ps1](#procura_eventosps1)
-7.  [Buscar_Logon.ps1](#buscar_logonps1)
-8.  [GPO - Auditoria de Logon (gpo_logons.rar)](#gpo---auditoria-de-logon-gpo_logonsrar)
-9.  [AlterarPerfilDeRede.ps1](#alterarperfilderedeps1)
-10. [Ver_Emails.ps1](#ver_emailsps1)
 ---
 
-## Ver_MfaComplianceReport.ps1
+## 🚀 Tabela de Scripts
+
+### Categoria: Microsoft 365
+
+| Script | Descrição |
+| :--- | :--- |
+| **[Ver_MfaComplianceReport.ps1](#ver_mfacompliancereportps1)** | Gera um relatório de conformidade MFA e entra em modo de consulta interativo. |
+| **[Ver_Emails.ps1](#ver_emailsps1)** | Gera um relatório completo de todos os e-mails vigentes na organização. |
+| **[Alterar_Senhas_365.ps1](#alterar_senhas_365ps1)** | Automatiza a geração e aplicação de senhas aleatórias para usuários de um domínio. |
+| **[Procura_Arquivos.ps1](#procura_arquivosps1)** | Localiza arquivos no OneDrive for Business de um usuário de forma interativa. |
+| **[Remover_Email.ps1](#remover_emailps1)** | Remove e-mails específicos de todas as caixas de correio da organização. |
+| **[Configura-CatchAll.ps1](#configura-catchallps1)** | Automatiza a configuração de um e-mail "catch-all" (coletor geral) para um domínio. |
+
+### Categoria: Active Directory & Windows Local
+
+| Script | Descrição |
+| :--- | :--- |
+| **[Relacao_Confianca.ps1](#relacao_confiancaps1)** | Verifica a relação de confiança de todos os computadores no Active Directory. |
+| **[Procura_Eventos.ps1](#procura_eventosps1)** | Busca múltiplos Event IDs nos logs de eventos do Windows em um período. |
+| **[Buscar_Logon.ps1](#buscar_logonps1)** | Realiza busca forense por eventos de logon (ID 4624) em computadores do domínio. |
+| **[GPO - Auditoria de Logon](#gpo---auditoria-de-logon-gpo_logonsrar)** | Backup de GPO para habilitar a auditoria necessária para o script `Buscar_Logon.ps1`. |
+| **[AlterarPerfilDeRede.ps1](#alterarperfilderedeps1)** | Visualiza e altera a categoria de perfis de rede (Pública/Privada) em uma máquina local. |
+
+---
+
+## 📜 Detalhes dos Scripts
+
+### Microsoft 365
+
+#### Ver_MfaComplianceReport.ps1
 
 Gera um relatório de conformidade sobre o status do MFA no Microsoft 365, focando em **contas de usuários reais** e, ao final, entra em um **modo de consulta interativo** para análise detalhada de contas específicas.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Filtragem inteligente, relatório duplo (CSV e TXT), análise de métodos, consulta interativa, sumário visual.
+* **Pré-requisitos**: Módulo `Microsoft.Graph`, permissões de API (`User.Read.All`, `UserAuthenticationMethod.Read.All`, etc.).
+* **Como Usar**: Execute `.\Ver-MfaComplianceReport.ps1` e siga as instruções.
 
-* **Filtragem Inteligente**: Exclui contas de serviço, sincronização e sistemas para focar o relatório em usuários reais.
-* **Relatório Duplo**: Cria um `.csv` com dados completos e um `.txt` formatado como relatório executivo.
-* **Análise de Métodos**: Identifica todos os métodos de MFA, como **Authenticator**, **Telefone/SMS**, **OATH**, **Windows Hello** e **FIDO2**.
-* **Consulta Interativa**: Após gerar o relatório, permite consultar detalhes de qualquer usuário em tempo real.
-* **Sumário Visual**: Exibe um resumo colorido no console com o percentual de conformidade.
-
-### Pré-requisitos
-
-* Módulo PowerShell `Microsoft.Graph`.
-* Permissões de API do Microsoft Graph: `User.Read.All`, `UserAuthenticationMethod.Read.All`, `Directory.Read.All`, `Policy.Read.All`.
-
-### Como Usar
-
-1.  Abra o script e personalize os filtros de exclusão de contas de serviço.
-2.  Execute no PowerShell: `.\Ver-MfaComplianceReport.ps1`.
-3.  Após a geração dos relatórios, digite o email de um usuário para ver detalhes ou pressione ENTER para sair.
-
----
-
-## Ver_Emails.ps1
+#### Ver_Emails.ps1
 
 Gera um **relatório completo de todos os e-mails vigentes** na organização Microsoft 365, categorizando usuários, grupos, caixas compartilhadas e aliases. Ideal para atender solicitações de levantamento de endereços de e-mail ativos.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Categorização inteligente, identificação de tipos de grupo, detecção de aliases, relatório executivo em Excel com abas organizadas.
+* **Pré-requisitos**: Módulos `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `ImportExcel`. Permissões de API (`User.Read.All`, `Group.Read.All`).
+* **Como Usar**: Execute `.\Ver_Emails.ps1` e aguarde a geração do arquivo Excel.
 
-* **Categorização Inteligente**: Separa automaticamente usuários ativos, inativos, externos, grupos e caixas compartilhadas.
-* **Identificação de Tipos de Grupo**: Distingue entre Microsoft 365, Teams, Listas de Distribuição e grupos de Segurança.
-* **Detecção de Aliases**: Identifica apelidos de e-mail tanto de usuários quanto de grupos através dos ProxyAddresses.
-* **Relatório Executivo**: Cria aba específica com **apenas e-mails vigentes** para apresentação ao cliente.
-* **Excel Organizado**: Gera arquivo Excel com múltiplas abas categorizadas e resumo executivo.
-* **Filtragem de Usuários Externos**: Remove automaticamente convidados e contas `#EXT#` do relatório principal.
-
-### Pré-requisitos
-
-* Módulos PowerShell: `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `ImportExcel`.
-* Permissões de API do Microsoft Graph: `User.Read.All`, `Group.Read.All`, `Mail.Read`.
-
-### Como Usar
-
-1.  Execute no PowerShell: `.\Ver_Emails.ps1`.
-2.  Aguarde a coleta de dados (pode levar alguns minutos em organizações grandes).
-3.  O script gerará um arquivo Excel com timestamp no nome.
-4.  **Para o cliente**: Use as abas `RESPOSTA_CLIENTE` e `RESUMO_EXECUTIVO`.
-5.  **Para análise técnica**: Consulte as abas numeradas com detalhamentos.
-
-### Estrutura do Relatório
-
-* **RESPOSTA_CLIENTE**: Lista limpa apenas dos e-mails funcionais
-* **RESUMO_EXECUTIVO**: Totais por categoria para apresentação
-* **1-Usuários_Ativos**: Funcionários com licença ativa
-* **2-Usuários_Sem_Licença**: Possíveis ex-funcionários
-* **3-Usuários_Externos**: Convidados e contas externas
-* **4-Grupos**: Todos os tipos (Microsoft 365, Teams, Distribuição)
-* **5-Caixas_Compartilhadas**: E-mails genéricos compartilhados
-* **6-Aliases**: Apelidos e endereços alternativos
-
----
-
-## Alterar_Senhas_365.ps1
+#### Alterar_Senhas_365.ps1
 
 Automatiza a geração e aplicação de **senhas aleatórias** para usuários de um domínio específico no Microsoft 365.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Geração segura, filtro por domínio, confirmação prévia, relatório CSV, senhas permanentes, controle de throttling.
+* **Pré-requisitos**: Módulo `Microsoft.Graph`, permissões de Admin (Global, Usuário ou Senha), permissões de API (`User.ReadWrite.All`).
+* **Como Usar**: Execute `.\Alterar_Senhas_365.ps1`, autentique-se e informe o domínio alvo.
+> ⚠️ **Aviso Importante**: O CSV gerado contém senhas em texto plano. Armazene-o em local seguro e remova-o após o uso.
 
-* **Geração Segura**: Cria senhas no formato `AA1234aa`.
-* **Filtro por Domínio**: Aplica a alteração apenas a usuários do domínio especificado.
-* **Confirmação Prévia**: Exibe a lista de usuários que serão afetados antes de prosseguir.
-* **Relatório CSV**: Gera um arquivo com todas as senhas alteradas e o status da operação.
-* **Senha Permanente**: Define as senhas para não expirarem no próximo logon.
-* **Controle de Throttling**: Implementa pausas para evitar bloqueios da API.
-
-### Pré-requisitos
-
-* Módulo PowerShell `Microsoft.Graph`.
-* Permissões de **Administrador Global**, **Administrador de Usuários** ou **Administrador de Senhas**.
-* Permissões de API do Graph: `User.ReadWrite.All`, `Directory.ReadWrite.All`.
-
-### Como Usar
-
-1.  Execute o script `.\Alterar_Senhas_365.ps1` em uma janela do PowerShell como Administrador.
-2.  Autentique-se com uma conta administrativa.
-3.  Informe o domínio alvo (ex: `empresa.com`).
-4.  Confirme a lista de usuários para iniciar o processo.
-
-#### ⚠️ Avisos Importantes
-* **Segurança**: O arquivo CSV gerado contém senhas em texto plano. Armazene-o em local seguro e remova-o quando não for mais necessário.
-* **Comunicação**: Avise os usuários sobre a alteração antes de executar o script.
-
----
-
-## Procura_Arquivos.ps1
+#### Procura_Arquivos.ps1
 
 Localiza arquivos por nome no **OneDrive for Business** de um usuário específico, de forma interativa.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Busca interativa, suporte a wildcards (`*`), saída detalhada.
+* **Pré-requisitos**: Módulo `Microsoft.Graph`, permissões de API (`User.Read.All`, `Files.Read.All`).
+* **Como Usar**: Execute `.\Procura_Arquivos.ps1` e siga as instruções no console.
 
-* **Busca Interativa**: Solicita o e-mail do usuário e o nome do arquivo no console.
-* **Suporte a Wildcards**: Permite o uso de `*` para buscas flexíveis.
-* **Saída Detalhada**: Exibe caminho completo, tamanho, data de modificação e ID do arquivo.
-
-### Pré-requisitos
-
-* Módulo PowerShell `Microsoft.Graph`.
-* Permissões de API do Graph: `User.Read.All`, `Files.Read.All`.
-
-### Como Usar
-
-1.  Execute o script: `.\Procura_Arquivos.ps1`.
-2.  Siga as instruções no console.
-
----
-
-## Remover_Email.ps1
+#### Remover_Email.ps1
 
 Realiza a remoção em massa de e-mails específicos de **todas as caixas de correio** do Microsoft 365, com base no remetente e assunto.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Remoção global (Soft Delete), processo automatizado via Security & Compliance Center, confirmação crítica, status em tempo real.
+* **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, role **Search And Purge**.
+* **Como Usar**: Execute `.\Remover_Email.ps1`, informe o remetente e o assunto, e confirme a operação.
+> ⚠️ **Aviso Importante**: Este script afeta TODAS as caixas de correio. Use com extrema cautela.
 
-* **Remoção Global**: Busca e remove e-mails de todo o ambiente M365.
-* **Operação Segura**: Utiliza o `Security & Compliance Center` e realiza um **Soft Delete** (move os e-mails para a pasta de Itens Recuperáveis).
-* **Processo Automatizado**: Conecta, solicita os critérios, cria a busca, aguarda a conclusão e executa a remoção.
-* **Confirmação Crítica**: Exige uma confirmação final antes de iniciar a remoção.
-* **Status em Tempo Real**: Exibe o progresso da busca diretamente no console.
+#### Configura-CatchAll.ps1
 
-### Pré-requisitos
+Automatiza a configuração de um e-mail **"catch-all"** (coletor geral) para um domínio específico, redirecionando e-mails enviados para endereços inexistentes para uma única caixa de correio.
 
-* Módulo PowerShell `ExchangeOnlineManagement`.
-* Permissões administrativas que incluam o role **Search And Purge** (disponível em grupos como *Compliance Management* ou *Organization Management*).
-
-### Como Usar
-
-1.  Execute o script `.\Remover_Email.ps1` em uma janela do PowerShell como Administrador.
-2.  O script se conectará ao *Security & Compliance Center*.
-3.  Informe o **remetente** e o **assunto** do e-mail a ser removido.
-4.  Confirme a operação digitando `S`.
-
-#### ⚠️ Avisos Importantes
-* **Impacto Elevado**: Este script afeta TODAS as caixas de correio. Use com extrema cautela e tenha certeza absoluta dos critérios de busca.
-* **Irreversibilidade**: Embora seja um *Soft Delete*, a recuperação dos e-mails é um processo manual. Verifique os parâmetros duas vezes antes de confirmar.
+* **Funcionalidades**: Instalação automática do módulo `ExchangeOnlineManagement`, validação de domínio, altera o tipo do domínio para `InternalRelay`, cria regra de transporte com prioridade dinâmica para evitar conflitos.
+* **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, permissões de Administrador do Exchange.
+* **Como Usar**: Execute `.\Configura-CatchAll.ps1` e forneça o e-mail do administrador, o domínio alvo e o e-mail coletor.
+> ⚠️ **Aviso Importante**: A propagação da regra de transporte pode levar até uma hora para ser concluída em todo o ambiente.
 
 ---
 
-## Relacao_Confianca.ps1
+### Active Directory & Windows Local
+
+#### Relacao_Confianca.ps1
 
 Verifica o status da **relação de confiança (trust relationship)** de todos os computadores ativos no Active Directory local e gera um relatório em Excel.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Diagnóstico preciso, relatório em Excel, cálculo de inatividade, não requer WinRM.
+* **Pré-requisitos**: Ferramentas RSAT, módulos `ActiveDirectory` e `ImportExcel`.
+* **Como Usar**: Execute `.\Relacao_Confianca.ps1` como Administrador em um computador do domínio.
 
-* **Diagnóstico Preciso**: Diferencia máquinas offline daquelas com a relação de confiança quebrada.
-* **Relatório em Excel**: Exporta os resultados para um arquivo `.xlsx` formatado.
-* **Cálculo de Inatividade**: Estima há quantos dias as máquinas offline não se comunicam.
-* **Não Requer WinRM**: Usa o comando `nltest.exe` para a verificação.
-
-### Pré-requisitos
-
-* Execução em um computador ingressado no domínio com as ferramentas RSAT.
-* Módulo PowerShell `ActiveDirectory`.
-* Módulo PowerShell `ImportExcel`.
-
-### Como Usar
-
-1.  Execute o script `.\Relacao_Confianca.ps1` em uma janela do PowerShell como Administrador.
-2.  O relatório será gerado na pasta `C:\Temp` por padrão.
-
----
-
-## Procura_Eventos.ps1
+#### Procura_Eventos.ps1
 
 Busca múltiplos **Event IDs** nos logs de eventos do Windows em um intervalo de datas e exporta os resultados para Excel.
 
-### Funcionalidades Principais
+* **Funcionalidades**: Busca por múltiplos IDs, filtro por data, varredura completa dos logs, exportação para Excel com abas separadas.
+* **Pré-requisitos**: Execução como Administrador, módulo `ImportExcel`.
+* **Como Usar**: Execute `.\Procura_Eventos.ps1` como Administrador e siga as instruções.
 
-* **Busca por Múltiplos IDs**: Permite inserir vários Event IDs de uma só vez.
-* **Filtro por Data**: Restringe a busca a um período específico.
-* **Busca Completa**: Varre todos os logs de eventos do sistema (`.evtx`).
-* **Exportação para Excel**: Organiza os resultados em abas separadas para cada Event ID.
+#### Buscar_Logon.ps1
 
-### Pré-requisitos
+Realiza uma busca forense por **eventos de logon (ID 4624)** em um ou todos os computadores do domínio, focando em atividades humanas diretas.
 
-* Execução como **Administrador**.
-* Módulo PowerShell `ImportExcel`.
+* **Funcionalidades**: Escopo flexível, foco em logons relevantes (tipos 2, 7, 10, 11), execução em paralelo, relatório em Excel.
+* **Pré-requisitos**: GPO de Auditoria de Logon habilitada (inclusa no repositório), módulos `ActiveDirectory` e `ImportExcel`.
+* **Como Usar**: Importe e vincule a GPO `gpo_logons.rar`, aguarde a replicação e execute `.\Buscar_Logon.ps1`.
 
-### Como Usar
+#### GPO - Auditoria de Logon (gpo_logons.rar)
 
-1.  Execute o script `.\Procura_Eventos.ps1` como Administrador.
-2.  Siga as instruções no console.
+Backup de uma **Group Policy Object (GPO)** pré-configurada para habilitar as políticas de auditoria e o WinRM, necessários para o funcionamento do script `Buscar_Logon.ps1`.
 
----
+* **Como Usar**: No GPMC, crie uma GPO vazia, clique com o botão direito, selecione **"Importar Configurações..."** e aponte para a pasta descompactada. Vincule a GPO na OU desejada.
 
-## Buscar_Logon.ps1
-
-Realiza uma busca forense por **eventos de logon (ID 4624)** em um ou todos os computadores do domínio, focando em atividades humanas diretas (logon interativo, remoto e offline).
-
-### Funcionalidades Principais
-
-* **Escopo Flexível**: Busca em um único PC ou em todo o domínio.
-* **Foco em Logons Relevantes**: Filtra por tipos de logon 2, 7, 10 e 11.
-* **Execução em Paralelo**: Usa jobs com timeout para não travar em máquinas offline.
-* **Relatório em Excel**: Exporta os resultados para um arquivo `.xlsx`.
-
-### Pré-requisitos
-
-* **GPO de Auditoria (Essencial)**: As máquinas alvo devem ter a política de auditoria de logon habilitada. Uma GPO pronta está incluída neste repositório.
-* Módulo PowerShell `ActiveDirectory` e `ImportExcel`.
-* Execução como Administrador.
-
-### Como Usar
-
-1.  **Primeiro**: Importe e vincule a GPO `gpo_logons.rar` na OU dos computadores.
-2.  Aguarde a replicação da política.
-3.  Execute `.\Buscar_Logon.ps1` e siga as instruções.
-
----
-
-## GPO - Auditoria de Logon (gpo_logons.rar)
-
-Backup de uma **Group Policy Object (GPO)** pré-configurada para habilitar as políticas de auditoria necessárias para o funcionamento do script `Buscar_Logon.ps1`.
-
-### Funcionalidades Principais
-
-* **Ativação da Auditoria Avançada**: Habilita as subcategorias de auditoria para registrar o Evento ID 4624.
-* **Habilitação do WinRM**: Configura o serviço de Gerenciamento Remoto do Windows e as regras de firewall.
-
-### Pré-requisitos
-
-* Ambiente Active Directory Domain Services.
-* Permissões de Administrador de Domínio.
-
-### Como Usar
-
-1.  Descompacte o arquivo.
-2.  No GPMC, crie uma nova GPO vazia.
-3.  Clique com o botão direito na GPO criada e selecione **"Importar Configurações..."**.
-4.  Siga o assistente, apontando para a pasta descompactada.
-5.  Vincule a GPO à OU que contém os computadores a serem auditados.
-
----
-
-## AlterarPerfilDeRede.ps1
+#### AlterarPerfilDeRede.ps1
 
 Permite visualizar e alterar a categoria de perfis de rede (Pública, Privada) em uma máquina Windows local.
 
-### Funcionalidades Principais
-
-* **Listagem Clara**: Exibe os perfis de rede ativos com seus nomes e categorias.
-* **Alteração Interativa**: Permite selecionar a interface e a nova categoria por meio de um menu.
-* **Verificação de Privilégios**: Garante a execução com permissões de administrador.
-
-### Pré-requisitos
-
-* Execução como **Administrador** na máquina local.
-
-### Como Usar
-
-1.  Clique com o botão direito no arquivo `AlterarPerfilDeRede.ps1` e selecione "Executar com o PowerShell".
-2.  Siga as instruções no console.
+* **Funcionalidades**: Listagem clara, alteração interativa, verificação de privilégios.
+* **Pré-requisitos**: Execução como Administrador na máquina local.
+* **Como Usar**: Clique com o botão direito no arquivo e selecione "Executar com o PowerShell".
 
 ---
 
