@@ -19,6 +19,7 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 | **[Procura_Arquivos.ps1](#procura_arquivosps1)** | Localiza arquivos no OneDrive for Business de um usuário de forma interativa. |
 | **[Remover_Email.ps1](#remover_emailps1)** | Remove e-mails específicos de todas as caixas de correio da organização. |
 | **[Configura-CatchAll.ps1](#configura-catchallps1)** | Automatiza a configuração de um e-mail "catch-all" (coletor geral) para um domínio. |
+| **[UsarAlias.ps1](#usaraliasps1)** | Habilita a funcionalidade 'Enviar como Alias' e gerencia os aliases de um usuário. |
 
 ### Categoria: Active Directory & Windows Local
 
@@ -59,7 +60,7 @@ Automatiza a geração e aplicação de **senhas aleatórias** para usuários de
 * **Funcionalidades**: Geração segura, filtro por domínio, confirmação prévia, relatório CSV, senhas permanentes, controle de throttling.
 * **Pré-requisitos**: Módulo `Microsoft.Graph`, permissões de Admin (Global, Usuário ou Senha), permissões de API (`User.ReadWrite.All`).
 * **Como Usar**: Execute `.\Alterar_Senhas_365.ps1`, autentique-se e informe o domínio alvo.
-> ⚠️ **Aviso Importante**: O CSV gerado contém senhas em texto plano. Armazene-o em local seguro e remova-o após o uso.
+    > ⚠️ **Aviso Importante**: O CSV gerado contém senhas em texto plano. Armazene-o em local seguro e remova-o após o uso.
 
 #### Procura_Arquivos.ps1
 
@@ -76,7 +77,7 @@ Realiza a remoção em massa de e-mails específicos de **todas as caixas de cor
 * **Funcionalidades**: Remoção global (Soft Delete), processo automatizado via Security & Compliance Center, confirmação crítica, status em tempo real.
 * **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, role **Search And Purge**.
 * **Como Usar**: Execute `.\Remover_Email.ps1`, informe o remetente e o assunto, e confirme a operação.
-> ⚠️ **Aviso Importante**: Este script afeta TODAS as caixas de correio. Use com extrema cautela.
+    > ⚠️ **Aviso Importante**: Este script afeta TODAS as caixas de correio. Use com extrema cautela.
 
 #### Configura-CatchAll.ps1
 
@@ -85,7 +86,16 @@ Automatiza a configuração de um e-mail **"catch-all"** (coletor geral) para um
 * **Funcionalidades**: Instalação automática do módulo `ExchangeOnlineManagement`, validação de domínio, altera o tipo do domínio para `InternalRelay`, cria regra de transporte com prioridade dinâmica para evitar conflitos.
 * **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, permissões de Administrador do Exchange.
 * **Como Usar**: Execute `.\Configura-CatchAll.ps1` e forneça o e-mail do administrador, o domínio alvo e o e-mail coletor.
-> ⚠️ **Aviso Importante**: A propagação da regra de transporte pode levar até uma hora para ser concluída em todo o ambiente.
+    > ⚠️ **Aviso Importante**: A propagação da regra de transporte pode levar até uma hora para ser concluída em todo o ambiente.
+
+#### UsarAlias.ps1
+
+Habilita a funcionalidade **"Enviar como Alias"** para toda a organização e entra em um menu interativo para visualizar e adicionar novos aliases a um usuário específico.
+
+* **Funcionalidades**: Ativação automática do recurso `SendFromAliasEnabled` no tenant, menu interativo para listar e adicionar múltiplos aliases a um usuário, instruções de uso no final.
+* **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, permissões de Administrador do Exchange.
+* **Como Usar**: Execute `.\UsarAlias.ps1`, autentique-se e siga as instruções para selecionar o usuário e gerenciar seus aliases.
+    > ⚠️ **Aviso Importante**: Se a funcionalidade for ativada pelo script, pode levar algumas horas para propagar.
 
 ---
 
