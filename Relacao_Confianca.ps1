@@ -1,3 +1,90 @@
+<#
+.SYNOPSIS
+    Auditoria automatizada de relacao de confianca entre computadores e dominio Active Directory
+
+.DESCRIPTION
+    Script completo para diagnostico e auditoria da integridade de relacoes de confianca entre
+    computadores Windows e controladores de dominio Active Directory. Utiliza comando nltest
+    nativo para verificacao precisa do canal seguro sem dependencias de WinRM ou PSRemoting.
+    Gera relatorio Excel detalhado com status, diagnosticos e estatisticas de conectividade.
+    
+    Funcionalidades principais:
+    - Descoberta automatica de todos os computadores ativos no AD
+    - Verificacao de conectividade de rede (ping) pre-validacao
+    - Teste de canal seguro usando nltest nativo do Windows
+    - Calculo automatico de tempo offline baseado em LastLogonDate
+    - Classificacao automatica: OK, FALHA (Confianca), Offline
+    - Exportacao Excel formatada com tabelas e freeze de cabecalho
+    - Relatorio de resumo com contadores por status
+    - Tratamento robusto de erros com fallback para CSV
+    
+    Cenarios de uso corporativo:
+    - Preparacao para migracao de dominio
+    - Auditoria de seguranca e compliance
+    - Troubleshooting de problemas de autenticacao
+    - Limpeza de objetos obsoletos no Active Directory
+    - Monitoramento proativo da saude do dominio
+
+.PARAMETER None
+    Script automatico - utiliza dominio atual e processa todos computadores ativos
+
+.EXAMPLE
+    .\Test-DomainTrustRelationship.ps1
+    # Executa auditoria completa no dominio atual
+    # Resultado: Relatorio Excel em C:\Temp\ com status de 250+ computadores
+
+.INPUTS
+    None - Script automatico usa dominio atual do computador de execucao
+
+.OUTPUTS
+    - Arquivo Excel (.xlsx): C:\Temp\Relatorio_RelacaoDeConfianca_[timestamp].xlsx
+    - Planilha formatada: Status de Confianca com colunas organizadas
+    - Console: Progresso detalhado e resumo estatistico final
+    - Fallback CSV: Se exportacao Excel falhar
+
+.NOTES
+    Autor         : Andre Kittler
+    Versao        : 1.0
+    Compatibilidade: PowerShell 5.1+, Windows Server/Client
+    
+    Requisitos obrigatorios:
+    - Modulo ActiveDirectory (RSAT Tools instalado)
+    - Modulo ImportExcel (Install-Module ImportExcel)
+    - Privilegios Domain User ou superior
+    - Conectividade de rede com controladores de dominio
+    - Firewall liberado para ICMP (ping) e RPC
+    
+    Tecnologias utilizadas:
+    - Get-ADComputer para descoberta automatica
+    - Test-Connection para validacao de conectividade
+    - nltest /sc_query para verificacao de canal seguro
+    - Export-Excel para relatorio formatado profissionalmente
+    
+    Interpretacao de resultados:
+    - OK: Canal seguro funcionando corretamente
+    - FALHA (Confianca): Relacao quebrada - requer netdom resetpwd
+    - Offline: Computador nao responde - possivel desligado/removido
+    
+    Comandos de correcao comuns:
+    - netdom resetpwd /server:[DC] /userd:[user] /passwordd:*
+    - Remove-ADComputer [computer] (para objetos obsoletos)
+    - Test-ComputerSecureChannel -Repair (PowerShell local)
+    
+    Consideracoes de performance:
+    - Processamento sequencial para evitar sobrecarga de rede
+    - Timeout automatico em computadores offline
+    - Progress indicator para ambientes com muitos computadores
+    
+    Limitacoes conhecidas:
+    - Nao funciona atraves de NAT ou firewalls restritivos
+    - Requer resolucao DNS bidirecional funcional
+    - Computadores em modo sleep podem aparecer como offline
+
+.LINK
+    https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems
+#>
+
+
 # --- Inicio do Script ---
 
 # 1. ===== CONFIGURACAO =====
