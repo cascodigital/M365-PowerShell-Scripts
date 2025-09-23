@@ -1,18 +1,80 @@
 <#
 .SYNOPSIS
-    Script para automatizar a configuracao de um email 'catch-all' (coletor geral)
-    em um tenant do Microsoft 365. Versao 2.0 - Corrigido.
+    Configuracao automatizada de email catch-all (coletor geral) para dominios Microsoft 365
 
 .DESCRIPTION
-    Este script realiza as seguintes acoes:
-    1. Verifica e instala o modulo ExchangeOnlineManagement do PowerShell.
-    2. Solicita o UPN do administrador, o dominio alvo e o email coletor.
-    3. Conecta-se ao Exchange Online.
-    4. Valida se o dominio informado e um dominio aceito no tenant.
-    5. Altera o tipo do dominio para 'InternalRelay'.
-    6. Cria uma regra de transporte com prioridade dinamica.
-    7. Desconecta a sessao corretamente.
+    Script automatizado para implementacao completa de solucao catch-all email em tenants 
+    Microsoft 365/Exchange Online. Configura dominio como InternalRelay e cria regra de 
+    transporte para redirecionamento automatico de emails enviados para enderecos inexistentes.
+    
+    Funcionalidades principais:
+    - Validacao e instalacao automatica do modulo ExchangeOnlineManagement
+    - Verificacao de dominios aceitos no tenant
+    - Configuracao de dominio como InternalRelay para roteamento interno
+    - Criacao de regra de transporte com prioridade dinamica
+    - Tratamento robusto de erros com rollback automatico
+    - Desconexao segura de sessoes Exchange Online
+    
+    Processo de configuracao:
+    1. Valida modulos e conectividade
+    2. Altera tipo de dominio para InternalRelay
+    3. Cria regra de transporte com menor prioridade disponivel
+    4. Configura redirecionamento para caixa coletora especificada
+
+.PARAMETER None
+    Script interativo - solicita informacoes durante execucao
+
+.EXAMPLE
+    .\Configure-CatchAll.ps1
+    # Script solicita:
+    # - Email do administrador: admin@cascodigital.com.br
+    # - Dominio alvo: cascodigital.com.br  
+    # - Email coletor: catchall@cascodigital.com.br
+    # Resultado: Emails para enderecos inexistentes em cascodigital.com.br sao redirecionados
+
+.INPUTS
+    String - Email administrador Microsoft 365
+    String - Dominio alvo para configuracao catch-all  
+    String - Email da caixa coletora de destino
+
+.OUTPUTS
+    - Console: Log detalhado de cada etapa da configuracao
+    - Exchange Online: Dominio configurado como InternalRelay
+    - Exchange Online: Regra de transporte catch-all ativa
+
+.NOTES
+    Autor         : Andre Kittler
+    Versao        : 2.0
+    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
+    
+    Requisitos Exchange Online:
+    - Modulo ExchangeOnlineManagement (instalacao automatica)
+    - Conta com privilegios Exchange Administrator ou Global Administrator
+    - Dominio deve ser dominio aceito (Accepted Domain) no tenant
+    
+    Configuracoes aplicadas:
+    - DomainType alterado para InternalRelay
+    - TransportRule com RedirectMessageTo configurado
+    - Priority definida dinamicamente (menor prioridade disponivel)
+    
+    Consideracoes importantes:
+    - Propagacao pode levar ate 1 hora
+    - Dominio InternalRelay nao aceita destinatarios diretos
+    - Regra aplica-se apenas a enderecos inexistentes
+    - Caixa coletora deve ter capacidade adequada
+    
+    Permissoes necessarias:
+    - Exchange Administrator OU
+    - Organization Management OU
+    - Global Administrator
+
+.LINK
+    https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/manage-accepted-domains/manage-accepted-domains
+
+.LINK
+    https://docs.microsoft.com/en-us/exchange/security-and-compliance/mail-flow-rules/mail-flow-rules
 #>
+
 
 # Define que o script para em caso de erro para o 'try/catch' funcionar
 $ErrorActionPreference = 'Stop'
