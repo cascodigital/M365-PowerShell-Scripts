@@ -1,17 +1,96 @@
 <#
 .SYNOPSIS
-    Localiza arquivos com nome especifico no OneDrive de um usuario.
+    Localizador avancado de arquivos no OneDrive de usuarios Microsoft 365 com suporte a wildcards
 
 .DESCRIPTION
-    Script interativo que solicita email do usuario e nome do arquivo para busca.
-    Suporta wildcards para busca flexivel.
+    Script interativo para busca abrangente de arquivos em drives OneDrive de usuarios especificos
+    no Microsoft 365. Utiliza Microsoft Graph API para acesso completo a todos os drives do usuario,
+    incluindo OneDrive pessoal e compartilhados. Suporte robusto a wildcards para buscas flexiveis
+    e relatorio detalhado com deteccao automatica de duplicatas.
+    
+    Funcionalidades principais:
+    - Busca interativa com validacao de entrada de dados
+    - Suporte completo a wildcards (* e ?) para filtros avancados
+    - Pesquisa simultanea em todos os drives do usuario
+    - Deteccao automatica e alerta de arquivos duplicados
+    - Relatorio detalhado com caminho completo, tamanho e metadados
+    - Tratamento robusto de erros com sugestoes de solucao
+    - Interface colorida para melhor experiencia do usuario
+    
+    Tipos de busca suportados:
+    - Busca exata por nome completo
+    - Busca parcial com wildcards automaticos
+    - Filtros por extensao de arquivo
+    - Busca em qualquer parte do nome do arquivo
+
+.PARAMETER None
+    Script totalmente interativo - solicita todas as informacoes durante execucao
+
+.EXAMPLE
+    .\Find-OneDriveFiles.ps1
+    # Email usuario: joao.silva@cascodigital.com.br
+    # Filtro busca: relatorio_mensal
+    # Resultado: Encontra todos arquivos contendo 'relatorio_mensal' no nome
+
+.EXAMPLE
+    .\Find-OneDriveFiles.ps1  
+    # Email usuario: maria.santos@cascodigital.com.br
+    # Filtro busca: *.xlsx
+    # Resultado: Lista todos arquivos Excel no OneDrive do usuario
+
+.EXAMPLE
+    # Busca com wildcard manual para contratos
+    .\Find-OneDriveFiles.ps1
+    # Email usuario: diretor@cascodigital.com.br
+    # Filtro busca: contrato_*_2024.*
+    # Resultado: Encontra contratos de 2024 com qualquer nome e extensao
+
+.INPUTS
+    String - Email/UPN do usuario alvo para busca
+    String - Filtro de busca com suporte a wildcards (* e ?)
+
+.OUTPUTS
+    - Console: Interface interativa colorida com progresso
+    - Lista: Arquivos encontrados com metadados completos
+    - Relatorio: Estatisticas de busca e alertas de duplicatas
+    - Detalhes: Nome, caminho, drive, tamanho, data modificacao, ID
 
 .NOTES
-    Autor: Gemini & Claude
-    Versao: 3.0 - Versao interativa
-    Requer: Modulo Microsoft.Graph.PowerShell
-    Permissoes de API necessarias: User.Read.All, Files.Read.All
+    Autor         : Andre Kittler  
+    Versao        : 3.0
+    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
+    
+    Requisitos Microsoft Graph:
+    - Modulo Microsoft.Graph.PowerShell instalado
+    - Conexao ativa ao Microsoft Graph
+    - Permissoes de API obrigatorias:
+      * User.Read.All (leitura de usuarios)
+      * Files.Read.All (acesso a arquivos OneDrive)
+    
+    Privilegios administrativos necessarios:
+    - SharePoint Administrator OU
+    - Global Administrator OU
+    - Global Reader (para busca read-only)
+    
+    Wildcards suportados:
+    - * : Qualquer sequencia de caracteres
+    - ? : Qualquer caractere unico
+    - Aplicacao automatica se nenhum wildcard informado
+    
+    Drives pesquisados:
+    - OneDrive pessoal do usuario
+    - OneDrive compartilhados (se acessiveis)
+    - Sites SharePoint associados ao usuario
+    
+    Limitacoes conhecidas:
+    - Arquivos em Teams podem nao aparecer
+    - Dependente de permissoes do usuario consultante
+    - Drives inacessiveis sao ignorados silenciosamente
+
+.LINK
+    https://docs.microsoft.com/en-us/graph/permissions-reference#files-permissions
 #>
+
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "           LOCALIZADOR DE ARQUIVOS NO ONEDRIVE" -ForegroundColor Cyan
