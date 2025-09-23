@@ -1,5 +1,15 @@
-# Script para gerar senhas aleatorias para usuarios do Microsoft 365
-# Requer o modulo Microsoft.Graph e privilegios administrativos
+<#
+.SYNOPSIS
+    Script para gerar senhas aleatorias para usuarios do Microsoft 365
+
+.DESCRIPTION
+    Geração de senhas "memoraveis", usandodo o caracteres randomicos e formato por exemplo AA1234qq
+
+.NOTES
+    Autor: Andre Kittler
+    Versao: 1.0
+    Requer: Requer o modulo Microsoft.Graph e privilegios administrativos
+#>
 
 # Instalar e importar o modulo se necessario
 if (!(Get-Module -ListAvailable -Name Microsoft.Graph)) {
