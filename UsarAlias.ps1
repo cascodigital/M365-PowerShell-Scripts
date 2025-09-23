@@ -1,20 +1,111 @@
 <#
 .SYNOPSIS
-    Script para gerenciar aliases de email e habilitar a funcionalidade 'Enviar como Alias' no Microsoft 365.
+    Gerenciador interativo de aliases de email com ativacao automatica de Send From Alias no Microsoft 365
 
 .DESCRIPTION
-    Este script realiza as seguintes acoes de forma automatizada:
-    1. Verifica e instala o modulo ExchangeOnlineManagement do PowerShell.
-    2. Conecta-se ao Exchange Online.
-    3. Verifica se a funcionalidade 'SendFromAliasEnabled' esta ativa para a organizacao.
-       - Se nao estiver, ativa e informa sobre o tempo de propagacao.
-    4. Solicita o email do usuario que tera os aliases gerenciados.
-    5. Entra em um menu interativo para:
-       - Listar os aliases existentes do usuario.
-       - Adicionar novos aliases de forma continua.
-    6. Ao sair, exibe instrucoes sobre como usar o alias no Outlook Web.
-    7. Desconecta a sessao do Exchange Online de forma segura.
+    Script corporativo para administracao completa de aliases de email em Exchange Online com interface
+    interativa e configuracao automatica da funcionalidade SendFromAliasEnabled. Permite adicao e
+    visualizacao de aliases secundarios para usuarios, com ativacao automatica da capacidade de envio
+    a partir de aliases no Outlook Web App e clientes desktop.
+    
+    Funcionalidades principais:
+    - Verificacao e ativacao automatica do SendFromAliasEnabled organizacional
+    - Interface de menu interativo para gerenciamento continuo de aliases
+    - Validacao automatica de usuarios e tratamento de erros robusto
+    - Visualizacao clara de endereco principal vs aliases secundarios
+    - Instrucoes detalhadas para uso pratico no Outlook Web
+    - Atualizacao em tempo real da lista de aliases apos adicoes
+    - Desconexao segura de sessoes Exchange Online
+    
+    Processo de configuracao:
+    1. Verifica/habilita SendFromAliasEnabled no tenant (propagacao 60min-2h)
+    2. Valida usuario alvo e exibe configuracao atual
+    3. Menu interativo para adicoes multiplas sem reinicializacao
+    4. Instrucoes step-by-step para uso no Outlook Web
+    
+    Casos de uso corporativos:
+    - Configuracao de aliases para departamentos (vendas@, suporte@)
+    - Setup de identidades multiplas para executivos 
+    - Criacao de aliases funcionais para equipes
+    - Configuracao de enderecos de resposta personalizados
+
+.PARAMETER None
+    Script totalmente interativo - solicita usuario alvo e aliases durante execucao
+
+.EXAMPLE
+    .\Manage-EmailAliases.ps1
+    # Usuario: joao.silva@cascodigital.com.br
+    # Novo alias: vendas@cascodigital.com.br
+    # Resultado: Alias configurado + instrucoes Outlook Web
+
+.EXAMPLE
+    .\Manage-EmailAliases.ps1
+    # Usuario: diretoria@cascodigital.com.br
+    # Aliases: ceo@cascodigital.com.br, presidencia@cascodigital.com.br
+    # Resultado: Multiplos aliases funcionais configurados
+
+.EXAMPLE  
+    # Setup de aliases para equipe de suporte
+    .\Manage-EmailAliases.ps1
+    # Usuario: suporte.tecnico@cascodigital.com.br
+    # Aliases: helpdesk@cascodigital.com.br, ti@cascodigital.com.br
+    # Resultado: Equipe pode responder com identidades especializadas
+
+.INPUTS
+    String - Email do usuario alvo para gerenciamento de aliases
+    String - Novos aliases a serem adicionados (multiplos via menu interativo)
+
+.OUTPUTS
+    - Console: Interface interativa colorida com menu de opcoes
+    - Exchange Online: Aliases configurados na mailbox do usuario
+    - Tenant: SendFromAliasEnabled ativado se necessario
+    - Instrucoes: Step-by-step para uso no Outlook Web
+
+.NOTES
+    Autor         : Andre Kittler
+    Versao        : 1.0
+    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
+    
+    Requisitos obrigatorios:
+    - Modulo ExchangeOnlineManagement (instalacao automatica)
+    - Licenca Microsoft 365 valida (qualquer nivel)
+    - Privilegios administrativos Exchange:
+      * Organization Management OU
+      * Recipient Management OU
+      * Mail Recipients role
+    
+    Configuracoes aplicadas:
+    - Set-OrganizationConfig -SendFromAliasEnabled $true
+    - Set-Mailbox -EmailAddresses @{add="alias@domain.com"}
+    - Propagacao: 60 minutos a 2 horas para ativacao completa
+    
+    Limitacoes e consideracoes:
+    - SendFromAliasEnabled requer propagacao em todo tenant
+    - Aliases devem ser de dominios aceitos (Accepted Domains)
+    - Outlook Desktop pode precisar de reinicializacao pos-configuracao
+    - Algunos clientes mobile podem nao suportar envio via alias
+    - Limitacao de 400 aliases por mailbox (limite teorico)
+    
+    Instrucoes Outlook Web App:
+    1. Novo email → Opcoes → Mostrar De
+    2. Botao De → Outro endereco de email
+    3. Digite alias → Alias fica salvo para proximos envios
+    
+    Instrucoes Outlook Desktop:
+    1. Arquivo → Configuracoes de Conta → Configuracoes de Conta
+    2. Selecionar conta → Alterar → Mais Configuracoes
+    3. Aba Email → Endereco de Email → Adicionar alias
+    
+    Troubleshooting comum:
+    - Erro "Alias already exists": Verificar se ja esta em uso
+    - Propagacao lenta: Aguardar 2h ou reiniciar Outlook
+    - Alias nao aparece: Verificar SendFromAliasEnabled no tenant
+
+.LINK
+    https://docs.microsoft.com/en-us/exchange/recipients-in-exchange-online/manage-user-mailboxes/add-or-remove-email-addresses
+
 #>
+
 
 # Define que o script para em caso de erro para o 'try/catch' funcionar
 $ErrorActionPreference = 'Stop'
