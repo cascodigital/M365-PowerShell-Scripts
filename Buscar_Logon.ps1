@@ -1,8 +1,65 @@
-# ========================================
-# SCRIPT COMPLETO - BUSCA LOGONS (ALVO ESPECÍFICO OU DOMÍNIO)
-# Data da Versão: 2025-07-08
-# INCLUI LOGONS OFFLINE (CACHED INTERACTIVE - TIPO 11)
-# ========================================
+<#
+.SYNOPSIS
+    Coleta e analisa eventos de logon de usuarios em computadores do dominio Active Directory
+
+.DESCRIPTION
+    Este script realiza busca abrangente de eventos de logon humano (EventID 4624) em computadores 
+    Windows do dominio Active Directory. Coleta eventos dos tipos: Interativo (2), RemoteInterativo (10), 
+    Desbloqueio (7) e Offline/Cache (11) dentro de um periodo especificado.
+    
+    Funcionalidades principais:
+    - Busca em computador especifico ou em todo o dominio
+    - Filtragem por periodo de datas personalizavel
+    - Tratamento de timeouts e maquinas offline
+    - Exportacao automatica para Excel com formatacao profissional
+    - Relatorio detalhado de coleta com estatisticas
+
+.PARAMETER None
+    Script interativo - todas as configuracoes sao solicitadas durante execucao
+
+.EXAMPLE
+    .\Procura_Eventos.ps1
+    Executa o script em modo interativo solicitando:
+    - Nome do computador alvo ou 'T' para todo o dominio
+    - Data inicial e final da busca (formato AAAA-MM-DD)
+
+.EXAMPLE
+    # Executar como Administrador para buscar eventos em servidor especifico
+    .\Procura_Eventos.ps1
+    # Digite: SRV-FILESERVER01
+    # Digite: 2024-12-01
+    # Digite: 2024-12-31
+
+.INPUTS
+    None - Script solicita entrada interativa do usuario
+
+.OUTPUTS
+    - Arquivo Excel (.xlsx) em C:\Temp\EventLog_Exports\
+    - Relatorio formatado com dados de logon detalhados
+    - Estatisticas de coleta no console
+
+.NOTES
+    Autor         : Andre Kittler
+    Versao        : 2.0
+    Compatibilidade: PowerShell 5.1+, Windows Server/Client
+    
+    Requisitos:
+    - Modulo ActiveDirectory (RSAT Tools)
+    - Modulo ImportExcel
+    - Privilegios de Administrador
+    - Conectividade de rede com computadores alvo
+    - Permissoes para leitura de logs de seguranca remotos
+    
+    Eventos coletados:
+    - EventID 4624 (Logon bem-sucedido)
+    - LogonType 2  (Interativo)
+    - LogonType 7  (Desbloqueio de workstation)
+    - LogonType 10 (RemoteInteractive via RDP)
+    - LogonType 11 (Cached/Offline)
+
+.LINK
+    https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4624
+#>
 
 # --- Pré-requisitos ---
 try {
@@ -253,3 +310,4 @@ else {
 
 Write-Host "`nScript finalizado!" -ForegroundColor Green
 Read-Host "Pressione Enter para sair"
+
