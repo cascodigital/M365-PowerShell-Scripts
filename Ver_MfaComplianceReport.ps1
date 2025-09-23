@@ -1,3 +1,130 @@
+
+<#
+.SYNOPSIS
+    Auditoria abrangente de configuracao MFA em usuarios reais Microsoft 365 com analise detalhada de metodos
+
+.DESCRIPTION
+    Script corporativo especializado para auditoria completa de Autenticacao Multifator (MFA) em
+    ambientes Microsoft 365, com foco exclusivo em usuarios reais excluindo contas de servico,
+    sistema e objetos nao humanos. Implementa filtragem inteligente, analise detalhada de todos
+    os 7 tipos de metodos MFA suportados e consultoria interativa individual por usuario.
+    
+    Funcionalidades principais:
+    - Filtragem automatica de usuarios reais vs contas de servico/sistema
+    - Analise de 7 tipos de metodos MFA: Telefone, Authenticator, OATH, Email, Windows Hello, FIDO2
+    - Relatorio executivo com percentual de conformidade organizacional
+    - Consulta detalhada interativa com drill-down por usuario especifico
+    - Exportacao dual: CSV tecnico + TXT executivo para clientes
+    - Interface colorida com progress bar e confirmacao de usuario
+    - Deteccao automatica de duplicatas e dispositivos registrados
+    
+    Tipos de usuarios filtrados (EXCLUIDOS):
+    - Contas de servico (ADConnect, Veeam, Exchange, etc.)
+    - Usuarios Guest/External (UserType != Member)
+    - Contas do sistema (@*.onmicrosoft.com)
+    - Caixas compartilhadas e grupos de seguranca
+    - Objetos de protocolo e notificacao automatizada
+    
+    Casos de uso corporativos:
+    - Auditoria de compliance para regulamentacao (SOX, ISO27001)
+    - Preparacao para certificacoes de seguranca cibernetica
+    - Relatorios executivos de postura de seguranca organizacional
+    - Investigacao de usuarios especificos pos-incidente
+    - Monitoramento continuo de adocao de MFA
+
+.PARAMETER None
+    Script totalmente interativo - conecta automaticamente e processa usuarios filtrados
+
+.EXAMPLE
+    .\Audit-MFACompliance.ps1
+    # Conecta ao Microsoft Graph automaticamente
+    # Filtra 150 usuarios reais de 200 objetos totais
+    # Resultado: 95% compliance (143/150 com MFA configurado)
+
+.EXAMPLE
+    .\Audit-MFACompliance.ps1
+    # Apos relatorio geral, consulta detalhada:
+    # Email: joao.silva@cascodigital.com.br
+    # Resultado: 3 metodos MFA (Telefone + Authenticator + Windows Hello)
+
+.EXAMPLE
+    # Auditoria corporativa para compliance SOX
+    .\Audit-MFACompliance.ps1
+    # Gera: MFA_Report_UsuariosReais_2024-12-15_14-30.csv (dados tecnicos)
+    # Gera: MFA_Comprovacao_UsuariosReais_2024-12-15_14-30.txt (relatorio executivo)
+
+.INPUTS
+    None - Script automatico com confirmacao interativa antes do processamento
+
+.OUTPUTS
+    - CSV tecnico: Dados completos de todos usuarios com metadados MFA
+    - TXT executivo: Relatorio formatado para apresentacao a diretoria
+    - Console: Interface interativa com consulta drill-down individual
+    - Estatisticas: Percentual de conformidade e usuarios nao conformes
+
+.NOTES
+    Autor         : Andre Kittler
+    Versao        : 2.0
+    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
+    
+    Requisitos Microsoft Graph:
+    - Modulo Microsoft.Graph instalado e conectado
+    - Permissoes de API obrigatorias:
+      * User.Read.All (leitura de usuarios)
+      * UserAuthenticationMethod.Read.All (metodos MFA)
+      * Directory.Read.All (propriedades estendidas)
+      * Policy.Read.All (politicas de autenticacao)
+    
+    Privilegios administrativos necessarios:
+    - Security Administrator OU
+    - Security Reader OU
+    - Authentication Administrator OU
+    - Global Administrator (para acesso completo)
+    
+    Criterios de filtragem aplicados:
+    - UserType = "Member" (exclui Guest/External)
+    - DisplayName sem padroes de servico (Sync, ADConnect, Veeam, etc.)
+    - UPN sem dominios .onmicrosoft.com ou padroes de sistema
+    - Email valido e formato correto obrigatorio
+    
+    Metodos MFA detectados e analisados:
+    1. phoneAuthenticationMethod (Telefone/SMS)
+    2. microsoftAuthenticatorAuthenticationMethod (MS Authenticator)
+    3. softwareOathAuthenticationMethod (Google Auth, Authy, etc.)
+    4. windowsHelloForBusinessAuthenticationMethod (PIN/Biometria)
+    5. fido2AuthenticationMethod (Chaves de seguranca)
+    6. emailAuthenticationMethod (Email backup)
+    7. Outros metodos emergentes suportados pelo Graph API
+    
+    Relatorio executivo inclui:
+    - Resumo executivo com percentual de conformidade
+    - Lista de usuarios nao conformes para acao corretiva
+    - Status de conformidade organizacional (Conforme/Nao Conforme)
+    - Detalhamento tecnico completo para auditoria
+    - Criterios de filtragem aplicados para transparencia
+    
+    Funcionalidade de consulta detalhada:
+    - Busca interativa por email ou nome parcial
+    - Detalhamento de todos os 7 tipos de metodos MFA
+    - Informacoes de dispositivos registrados e datas
+    - Numeros de telefone mascarados para privacidade
+    - Status de conta (ativa/licenciada) para contexto
+    
+    Consideracoes de performance:
+    - Progress bar durante processamento de usuarios
+    - Tratamento de erros individual sem interrupcao do lote
+    - Otimizacao de chamadas API com ErrorAction SilentlyContinue
+    - Processamento sequencial para evitar throttling
+
+.LINK
+    https://docs.microsoft.com/en-us/graph/api/authentication-list-methods
+
+.LINK
+    https://docs.microsoft.com/en-us/azure/active-directory/authentication/concept-authentication-methods
+#>
+
+
+
 # Script MFA - COM FILTROS PARA USUÁRIOS REAIS
 Write-Host "=== VERIFICAÇÃO DE MFA - APENAS USUÁRIOS REAIS ===" -ForegroundColor Green
 try {
