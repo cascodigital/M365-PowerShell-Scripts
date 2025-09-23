@@ -139,7 +139,9 @@ Permite visualizar e alterar a categoria de perfis de rede (Pública, Privada) e
 * **Pré-requisitos**: Execução como Administrador na máquina local.
 * **Como Usar**: Clique com o botão direito no arquivo e selecione "Executar com o PowerShell".
 
----
+### 👨‍💻 Autor
+
+**Andre Kittler** - *Administrador Microsoft 365*
 
 ## Licença
 
