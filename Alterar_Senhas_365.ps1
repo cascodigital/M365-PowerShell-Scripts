@@ -1,15 +1,76 @@
 <#
 .SYNOPSIS
-    Script para gerar senhas aleatorias para usuarios do Microsoft 365
+    Gerador automatizado de senhas aleatorias para usuarios Microsoft 365 por dominio
 
 .DESCRIPTION
-    Geração de senhas "memoraveis", usandodo o caracteres randomicos e formato por exemplo AA1234qq
+    Script automatizado para geracao e aplicacao em massa de senhas aleatorias em usuarios 
+    Microsoft 365/Azure AD. Utiliza o modulo Microsoft.Graph para conectividade moderna e 
+    gera senhas no formato memoravel (AA1234qq) com 2 caracteres maiusculos, 4 numeros 
+    e 2 caracteres minusculos.
+    
+    Funcionalidades principais:
+    - Geracao de senhas aleatorias com formato padronizado e seguro
+    - Filtragem automatica por dominio especifico
+    - Processamento em massa com controle de throttling
+    - Relatorio detalhado de sucessos e falhas
+    - Exportacao automatica para CSV com timestamp
+    - Validacao de permissoes e tratamento de erros robusto
+
+.PARAMETER None
+    Script interativo - solicita dominio alvo durante execucao
+
+.EXAMPLE
+    .\Generate-RandomPasswords.ps1
+    # Script solicita: Digite o dominio para aplicar a nova senha (exemplo: empresa.com.br)
+    # Digite: cascodigital.com.br
+    # Processa todos usuarios habilitados do dominio cascodigital.com.br
+    # Confirma lista de usuarios encontrados
+    # Aplica novas senhas e gera relatorio CSV
+
+.INPUTS
+    String - Dominio alvo inserido interativamente pelo usuario
+
+.OUTPUTS
+    - Arquivo CSV: Senhas_Usuarios_[dominio]_[timestamp].csv
+    - Console: Lista de usuarios processados com status
+    - Relatorio: Estatisticas de sucessos e falhas
 
 .NOTES
-    Autor: Andre Kittler
-    Versao: 1.0
-    Requer: Requer o modulo Microsoft.Graph e privilegios administrativos
+    Autor         : Andre Kittler
+    Versao        : 2.0
+    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
+    
+    Requisitos Microsoft Graph:
+    - Modulo Microsoft.Graph instalado
+    - Permissoes necessarias:
+      * User.ReadWrite.All
+      * Directory.ReadWrite.All
+      * UserAuthenticationMethod.ReadWrite.All
+      * Directory.AccessAsUser.All
+    
+    Privilegios administrativos necessarios:
+    - Global Administrator OU
+    - User Administrator OU  
+    - Password Administrator
+    
+    Formato de senha gerada:
+    - Padrao: AA1234qq (8 caracteres)
+    - 2 caracteres maiusculos aleatorios
+    - 4 numeros aleatorios
+    - 2 caracteres minusculos aleatorios
+    
+    Configuracoes de seguranca:
+    - ForceChangePasswordNextSignIn: false
+    - Senhas definidas como finais (usuarios nao precisam alterar)
+    - Throttling de 1 segundo entre processamentos
+
+.LINK
+    https://docs.microsoft.com/en-us/graph/api/user-update
+    
+.LINK
+    https://docs.microsoft.com/en-us/graph/permissions-reference
 #>
+
 
 # Instalar e importar o modulo se necessario
 if (!(Get-Module -ListAvailable -Name Microsoft.Graph)) {
