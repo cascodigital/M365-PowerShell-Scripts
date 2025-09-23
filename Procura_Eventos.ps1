@@ -1,17 +1,103 @@
 <#
 .SYNOPSIS
-    Busca múltiplos Event IDs em um intervalo de datas em TODOS os logs de eventos e exporta os detalhes para um arquivo Excel.
+    Analisador abrangente de logs de eventos Windows com busca multi-ID e exportacao Excel avancada
 
 .DESCRIPTION
-    Este script solicita um ou mais IDs de Evento (separados por vírgula) e um intervalo de datas. 
-    Ele pesquisa em TODOS os arquivos de log .evtx (Application, System, Security, etc.) e, 
-    se encontrar resultados, extrai todas as propriedades de cada evento e salva em um arquivo .xlsx detalhado.
-    Versão 7.0 permite busca por múltiplos Event IDs simultaneamente.
+    Script robusto para analise forense e investigacao de eventos Windows em ambiente corporativo.
+    Realiza busca simultanea de multiplos Event IDs em todos os arquivos de log (.evtx) do sistema,
+    incluindo logs arquivados e rotacionados. Exporta resultados estruturados para Excel com abas
+    separadas por tipo de evento e formatacao profissional para analise detalhada.
+    
+    Funcionalidades principais:
+    - Busca simultanea de multiplos Event IDs com operador OR logico
+    - Varredura completa em todos os logs do sistema (Application, System, Security, etc.)
+    - Filtragem precisa por intervalo de datas com timezone UTC
+    - Processamento de logs arquivados e rotacionados automaticamente
+    - Exportacao Excel multi-aba com agrupamento por Event ID
+    - Extracao completa de propriedades XML dos eventos
+    - Otimizacao de performance com skip de arquivos antigos
+    - Tratamento robusto de arquivos corrompidos ou em uso
+    
+    Casos de uso tipicos:
+    - Investigacao de incidentes de seguranca
+    - Auditoria de logons e acessos 
+    - Analise de falhas de sistema
+    - Monitoramento de atividades suspeitas
+    - Compliance e relatoria regulatoria
+
+.PARAMETER None
+    Script interativo - solicita Event IDs e intervalo de datas durante execucao
+
+.EXAMPLE
+    .\Analyze-WindowsEventLogs.ps1
+    # Event IDs: 4624,4625,4648
+    # Data inicial: 2024-12-01  
+    # Data final: 2024-12-31
+    # Resultado: Analise completa de logons, falhas e elevacao de privilegios
+
+.EXAMPLE
+    .\Analyze-WindowsEventLogs.ps1
+    # Event IDs: 1074,1076,6005,6006
+    # Data inicial: 2024-11-15
+    # Data final: 2024-11-30
+    # Resultado: Historico completo de shutdowns, reboots e inicializacoes do sistema
+
+.EXAMPLE
+    # Investigacao de incidente de seguranca
+    .\Analyze-WindowsEventLogs.ps1
+    # Event IDs: 4720,4726,4738,4740
+    # Data inicial: 2024-10-01
+    # Data final: 2024-10-07  
+    # Resultado: Analise de criacao, exclusao, alteracao e bloqueio de contas
+
+.INPUTS
+    String - Lista de Event IDs separados por virgula (ex: 4624,4625,4648)
+    DateTime - Data inicial da busca no formato AAAA-MM-DD
+    DateTime - Data final da busca no formato AAAA-MM-DD
+
+.OUTPUTS
+    - Arquivo Excel (.xlsx) em C:\Temp\EventLog_Exports\
+    - Abas separadas por Event ID para analise organizada
+    - Aba consolidada "Todos os Eventos" com visao geral
+    - Console: Progresso detalhado e estatisticas de coleta
 
 .NOTES
-    Autor: Gemini (Assistente do Google) - Modificado
-    Versão: 7.0
-    REQUER EXECUÇÃO COMO ADMINISTRADOR e o módulo ImportExcel instalado.
+    Autor         : Andre Kittler
+    Versao        : 7.0
+    Compatibilidade: PowerShell 5.1+, Windows Server/Client
+    
+    Requisitos obrigatorios:
+    - Privilegios de Administrador local
+    - Modulo ImportExcel instalado (Install-Module ImportExcel)
+    - Acesso de leitura aos logs de eventos do Windows
+        
+    Configuracoes tecnicas:
+    - Busca recursiva em C:\Windows\System32\winevt\Logs\
+    - Extracao completa de propriedades XML EventData
+    - Skip automatico de arquivos fora do intervalo temporal
+    
+    Logs pesquisados:
+    - Application.evtx (eventos de aplicacoes)
+    - System.evtx (eventos do sistema)  
+    - Security.evtx (eventos de seguranca)
+    - Todos os logs adicionais (.evtx) encontrados
+    - Logs arquivados e rotacionados historicos
+    
+    Performance e otimizacao:
+    - Verificacao de LastWriteTime para skip de arquivos antigos
+    - Tratamento silencioso de arquivos corrompidos ou bloqueados
+    - Processamento em lote para reduzir overhead de memoria
+    
+    Limitacoes conhecidas:
+    - Requer privilegios administrativos para logs de Security
+    - Performance varia com quantidade de logs e periodo pesquisado
+    - Arquivos em uso podem ser ignorados
+
+.LINK
+    https://docs.microsoft.com/en-us/windows/win32/wes/consuming-events
+
+.LINK
+    https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/advanced-security-auditing
 #>
 
 # --- Verificação de Privilégios de Administrador ---
