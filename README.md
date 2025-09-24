@@ -104,7 +104,7 @@ Habilita a funcionalidade **"Enviar como Alias"** para toda a organização e en
 
 #### Relacao_Confianca.ps1
 
-Verifica o status da **relação de confiança (trust relationship)** de todos os computadores ativos no Active Directory local e gera um relatório em Excel.
+Verifica o status da **relação de confiança (trust relationship)** de um ou todos os computadores ativos no Active Directory local e gera um relatório em Excel.
 
 * **Funcionalidades**: Diagnóstico preciso, relatório em Excel, cálculo de inatividade, não requer WinRM.
 * **Pré-requisitos**: Ferramentas RSAT, módulos `ActiveDirectory` e `ImportExcel`.
