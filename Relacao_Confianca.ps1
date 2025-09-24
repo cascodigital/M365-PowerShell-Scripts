@@ -1,102 +1,61 @@
 <#
 .SYNOPSIS
-    Auditoria automatizada de relacao de confianca entre computadores e dominio Active Directory
+    Auditoria automatizada de relacao de confianca entre computadores e dominio Active Directory.
 
 .DESCRIPTION
     Script completo para diagnostico e auditoria da integridade de relacoes de confianca entre
-    computadores Windows e controladores de dominio Active Directory. Utiliza comando nltest
-    nativo para verificacao precisa do canal seguro sem dependencias de WinRM ou PSRemoting.
-    Gera relatorio Excel detalhado com status, diagnosticos e estatisticas de conectividade.
-    
+    computadores Windows e controladores de dominio Active Directory. Oferece dois modos de operacao:
+    1. Interativo: Verifica um computador especifico e exibe o resultado no console.
+    2. Lote: Verifica todos os computadores ativos no AD e gera um relatorio detalhado em Excel.
+
+    Utiliza o comando 'nltest' nativo para uma verificacao precisa do canal seguro, sem dependencias
+    de WinRM ou PSRemoting.
+
     Funcionalidades principais:
-    - Descoberta automatica de todos os computadores ativos no AD
-    - Verificacao de conectividade de rede (ping) pre-validacao
-    - Teste de canal seguro usando nltest nativo do Windows
-    - Calculo automatico de tempo offline baseado em LastLogonDate
-    - Classificacao automatica: OK, FALHA (Confianca), Offline
-    - Exportacao Excel formatada com tabelas e freeze de cabecalho
-    - Relatorio de resumo com contadores por status
-    - Tratamento robusto de erros com fallback para CSV
-    
-    Cenarios de uso corporativo:
-    - Preparacao para migracao de dominio
-    - Auditoria de seguranca e compliance
-    - Troubleshooting de problemas de autenticacao
-    - Limpeza de objetos obsoletos no Active Directory
-    - Monitoramento proativo da saude do dominio
+    - Menu de selecao para verificacao unica ou em lote.
+    - Descoberta automatica de todos os computadores ativos no AD (modo lote).
+    - Verificacao de conectividade de rede (ping) pre-validacao.
+    - Teste de canal seguro usando nltest.
+    - Calculo automatico de tempo offline baseado em LastLogonDate.
+    - Classificacao automatica: OK, FALHA (Confianca), Offline.
+    - Exportacao para Excel formatado com tabelas (modo lote).
+    - Relatorio de resumo com contadores por status (modo lote).
+    - Tratamento robusto de erros.
 
 .PARAMETER None
-    Script automatico - utiliza dominio atual e processa todos computadores ativos
+    O script solicita a selecao do modo de operacao no inicio.
 
 .EXAMPLE
-    .\Test-DomainTrustRelationship.ps1
-    # Executa auditoria completa no dominio atual
-    # Resultado: Relatorio Excel em C:\Temp\ com status de 250+ computadores
-
-.INPUTS
-    None - Script automatico usa dominio atual do computador de execucao
+    .\Test-DomainTrustRelationship_v2.ps1
+    # Apresenta um menu para escolher entre verificar uma maquina ou todas.
 
 .OUTPUTS
-    - Arquivo Excel (.xlsx): C:\Temp\Relatorio_RelacaoDeConfianca_[timestamp].xlsx
-    - Planilha formatada: Status de Confianca com colunas organizadas
-    - Console: Progresso detalhado e resumo estatistico final
-    - Fallback CSV: Se exportacao Excel falhar
+    - Console: Resultado para verificacao de maquina unica ou progresso da verificacao em lote.
+    - Arquivo Excel (.xlsx): C:\Temp\Relatorio_RelacaoDeConfianca_[timestamp].xlsx (apenas no modo lote).
 
 .NOTES
-    Autor         : Andre Kittler
-    Versao        : 1.0
+    Autor         : Andre Kittler (Modificado para interatividade)
+    Versao        : 2.0
     Compatibilidade: PowerShell 5.1+, Windows Server/Client
-    
+
     Requisitos obrigatorios:
-    - Modulo ActiveDirectory (RSAT Tools instalado)
-    - Modulo ImportExcel (Install-Module ImportExcel)
-    - Privilegios Domain User ou superior
-    - Conectividade de rede com controladores de dominio
-    - Firewall liberado para ICMP (ping) e RPC
-    
-    Tecnologias utilizadas:
-    - Get-ADComputer para descoberta automatica
-    - Test-Connection para validacao de conectividade
-    - nltest /sc_query para verificacao de canal seguro
-    - Export-Excel para relatorio formatado profissionalmente
-    
-    Interpretacao de resultados:
-    - OK: Canal seguro funcionando corretamente
-    - FALHA (Confianca): Relacao quebrada - requer netdom resetpwd
-    - Offline: Computador nao responde - possivel desligado/removido
-    
-    Comandos de correcao comuns:
-    - netdom resetpwd /server:[DC] /userd:[user] /passwordd:*
-    - Remove-ADComputer [computer] (para objetos obsoletos)
-    - Test-ComputerSecureChannel -Repair (PowerShell local)
-    
-    Consideracoes de performance:
-    - Processamento sequencial para evitar sobrecarga de rede
-    - Timeout automatico em computadores offline
-    - Progress indicator para ambientes com muitos computadores
-    
-    Limitacoes conhecidas:
-    - Nao funciona atraves de NAT ou firewalls restritivos
-    - Requer resolucao DNS bidirecional funcional
-    - Computadores em modo sleep podem aparecer como offline
-
-.LINK
-    https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems
+    - Modulo ActiveDirectory (parte das RSAT Tools).
+    - Modulo ImportExcel (Execute: Install-Module ImportExcel -Scope CurrentUser).
+    - Privilegios de usuario de dominio ou superior.
+    - Conectividade de rede com os controladores de dominio.
 #>
-
 
 # --- Inicio do Script ---
 
 # 1. ===== CONFIGURACAO =====
-# Caminho da pasta onde o relatorio sera salvo.
+# Caminho da pasta onde o relatorio sera salvo (usado no modo de verificacao de todos).
 $reportFolder = "C:\Temp"
-
 # --- Fim da Configuracao ---
 
-# 2. Preparar ambiente e nome do arquivo
+
+# 2. ===== PREPARACAO DO AMBIENTE =====
 try {
     Import-Module ActiveDirectory -ErrorAction Stop
-    # O modulo ImportExcel pode ser instalado com: Install-Module -Name ImportExcel
     Import-Module ImportExcel -ErrorAction Stop
 }
 catch {
@@ -112,52 +71,34 @@ if (-not $domainName) {
     return
 }
 
-Write-Host "Verificando para o dominio: $domainName" -ForegroundColor Cyan
-
 # Criar a pasta de relatorios se ela nao existir
 if (-not (Test-Path -Path $reportFolder)) {
     New-Item -Path $reportFolder -ItemType Directory | Out-Null
 }
 
-# Adiciona data e hora ao nome do arquivo
-$timestamp = Get-Date -Format "yyyy-MM-dd_HHmm"
-$reportPath = Join-Path -Path $reportFolder -ChildPath "Relatorio_RelacaoDeConfianca_$timestamp.xlsx"
-
-# 3. Obter TODOS os computadores ativos do Active Directory
-Write-Host "Buscando TODOS os computadores ativos no Active Directory..."
-$allComputers = Get-ADComputer -Filter {Enabled -eq $true} -Properties LastLogonDate
-
-# Array para armazenar os resultados
-$results = @()
-
-# Verifica se algum computador foi encontrado
-if (-not $allComputers) {
-    Write-Host "Nenhum computador ativo foi encontrado no Active Directory. Saindo do script." -ForegroundColor Yellow
-    return
-}
-
-Write-Host "Iniciando verificacao em $($allComputers.Count) computadores..."
-
-# 4. Loop para verificar cada computador
-$processedCount = 0
-foreach ($computer in $allComputers) {
-    $computerName = $computer.Name
-    $processedCount++
-    
-    Write-Host "[$processedCount/$($allComputers.Count)] Verificando: $computerName"
+# 3. ===== FUNCAO DE VERIFICACAO =====
+# Centraliza a logica de teste para ser reutilizada
+function Test-TrustRelationship {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ComputerName,
+        [Parameter(Mandatory = $true)]
+        [string]$DomainName,
+        [Parameter(Mandatory = $true)]
+        [object]$ADComputerObject
+    )
 
     $statusObject = [PSCustomObject]@{
-        ComputerName  = $computerName
+        ComputerName  = $ComputerName
         Status        = ''
         Detalhes      = ''
-        LastLogonDate = $computer.LastLogonDate
+        LastLogonDate = $ADComputerObject.LastLogonDate
     }
 
     # Teste de conectividade (ping)
-    if (Test-Connection -ComputerName $computerName -Count 1 -Quiet) {
-        # Usa o utilitario nltest, que nao depende de WinRM/PSRemoting
-        # O '&' e o operador de chamada, necessario para executar comandos com argumentos
-        $nltestOutput = & nltest /sc_query:$domainName /server:$computerName 2>&1
+    if (Test-Connection -ComputerName $ComputerName -Count 1 -Quiet) {
+        # Usa o utilitario nltest
+        $nltestOutput = & nltest /sc_query:$domainName /server:$ComputerName 2>&1
         
         # Verifica a saida do comando
         if ($nltestOutput -match "Success") {
@@ -166,7 +107,6 @@ foreach ($computer in $allComputers) {
         }
         else {
             $statusObject.Status = "FALHA (Confianca)"
-            # Captura a mensagem de erro do nltest para diagnostico
             $failureReason = ($nltestOutput | Select-Object -Last 1).ToString().Trim()
             $statusObject.Detalhes = "Relacao de confianca quebrada ou erro de comunicacao. Detalhe: $failureReason"
         }
@@ -175,8 +115,8 @@ foreach ($computer in $allComputers) {
         # A maquina nao respondeu ao ping
         $statusObject.Status = "Offline"
         
-        if ($computer.LastLogonDate -is [datetime]) {
-            $timeSpan = New-TimeSpan -Start $computer.LastLogonDate -End (Get-Date)
+        if ($ADComputerObject.LastLogonDate -is [datetime]) {
+            $timeSpan = New-TimeSpan -Start $ADComputerObject.LastLogonDate -End (Get-Date)
             $daysOffline = [math]::Round($timeSpan.TotalDays)
             $statusObject.Detalhes = "Aproximadamente $daysOffline dias offline."
         }
@@ -185,29 +125,102 @@ foreach ($computer in $allComputers) {
         }
     }
 
-    $results += $statusObject
+    return $statusObject
 }
 
-# 5. Exportar os resultados para um arquivo Excel
-if ($results) {
-    Write-Host "`nExportando relatorio para $reportPath..."
-    try {
-        $results | Export-Excel -Path $reportPath -AutoSize -WorksheetName "Status de Confianca" -TableStyle Medium9 -FreezeTopRow
-        Write-Host "Relatorio gerado com sucesso em $reportPath" -ForegroundColor Green
+
+# 4. ===== MENU PRINCIPAL E SELECAO DE MODO =====
+Clear-Host
+Write-Host "Auditoria de Relacao de Confianca com o Dominio: $domainName" -ForegroundColor Yellow
+Write-Host ("-" * 60)
+Write-Host "Selecione uma opcao:"
+Write-Host "1. Verificar um UNICO computador."
+Write-Host "2. Verificar TODOS os computadores do dominio e gerar relatorio."
+$choice = Read-Host "Digite sua opcao (1 ou 2)"
+
+switch ($choice) {
+    '1' {
+        # --- MODO: VERIFICACAO UNICA ---
+        do {
+            $targetComputer = Read-Host "`nDigite o nome do computador a ser verificado"
+            if ([string]::IsNullOrWhiteSpace($targetComputer)) {
+                Write-Host "Nome do computador nao pode ser vazio." -ForegroundColor Yellow
+                continue
+            }
+
+            Write-Host "Buscando '$targetComputer' no Active Directory..."
+            $adComp = Get-ADComputer -Identity $targetComputer -Properties LastLogonDate -ErrorAction SilentlyContinue
+            
+            if (-not $adComp) {
+                 Write-Host "ERRO: Computador '$targetComputer' nao encontrado no Active Directory." -ForegroundColor Red
+            } else {
+                Write-Host "Verificando relacao de confianca para: $($adComp.Name)..."
+                $result = Test-TrustRelationship -ComputerName $adComp.Name -DomainName $domainName -ADComputerObject $adComp
+                
+                # Exibe o resultado formatado
+                Write-Host "`n--- Resultado para $($result.ComputerName) ---" -ForegroundColor Green
+                $statusColor = if ($result.Status -eq "OK") {"Green"} elseif ($result.Status -like "FALHA*") {"Red"} else {"Yellow"}
+                Write-Host "Status        :" -NoNewline; Write-Host " $($result.Status)" -ForegroundColor $statusColor
+                Write-Host "Detalhes      : $($result.Detalhes)"
+                Write-Host "Ultimo Logon  : $($result.LastLogonDate)"
+                Write-Host ("-" * 35)
+            }
+
+            $another = Read-Host "`nDeseja verificar outro computador? (s/n)"
+        } while ($another -eq 's')
+        Write-Host "Verificacao finalizada."
+    }
+    '2' {
+        # --- MODO: VERIFICAR TODOS E GERAR RELATORIO ---
+        $timestamp = Get-Date -Format "yyyy-MM-dd_HHmm"
+        $reportPath = Join-Path -Path $reportFolder -ChildPath "Relatorio_RelacaoDeConfianca_$timestamp.xlsx"
+
+        Write-Host "`nBuscando TODOS os computadores ativos no Active Directory..."
+        $allComputers = Get-ADComputer -Filter {Enabled -eq $true} -Properties LastLogonDate
+        $results = @()
+
+        if (-not $allComputers) {
+            Write-Host "Nenhum computador ativo foi encontrado no Active Directory. Saindo do script." -ForegroundColor Yellow
+            return
+        }
+
+        Write-Host "Iniciando verificacao em $($allComputers.Count) computadores..."
         
-        # Mostra um resumo
-        $summary = $results | Group-Object Status | Select-Object Name, Count
-        Write-Host "`nResumo:" -ForegroundColor Yellow
-        $summary | ForEach-Object { Write-Host "  $($_.Name): $($_.Count)" }
+        $processedCount = 0
+        foreach ($computer in $allComputers) {
+            $processedCount++
+            Write-Progress -Activity "Verificando Computadores" -Status "Processando $($computer.Name)" -PercentComplete (($processedCount / $allComputers.Count) * 100)
+            Write-Host "[$processedCount/$($allComputers.Count)] Verificando: $($computer.Name)"
+
+            $results += Test-TrustRelationship -ComputerName $computer.Name -DomainName $domainName -ADComputerObject $computer
+        }
+        Write-Progress -Activity "Verificando Computadores" -Completed
+
+        if ($results) {
+            Write-Host "`nExportando relatorio para $reportPath..."
+            try {
+                $results | Export-Excel -Path $reportPath -AutoSize -WorksheetName "Status de Confianca" -TableStyle Medium9 -FreezeTopRow -ErrorAction Stop
+                Write-Host "Relatorio gerado com sucesso em $reportPath" -ForegroundColor Green
+                
+                # Mostra um resumo no console
+                $summary = $results | Group-Object Status | Select-Object Name, Count
+                Write-Host "`nResumo:" -ForegroundColor Yellow
+                $summary | ForEach-Object { Write-Host "  $($_.Name): $($_.Count)" }
+            }
+            catch {
+                Write-Host "ERRO ao exportar para Excel: $($_.Exception.Message)" -ForegroundColor Red
+                $csvPath = $reportPath -replace '\.xlsx$', '.csv'
+                Write-Host "Como alternativa, exportando para CSV em: $csvPath"
+                $results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
+            }
+        }
+        else {
+            Write-Host "Nenhum computador foi processado." -ForegroundColor Yellow
+        }
     }
-    catch {
-        Write-Host "ERRO ao exportar para Excel: $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "Os resultados estao na variavel `$results`. Voce pode exporta-los para CSV com:"
-        Write-Host "`$results | Export-Csv -Path 'C:\Temp\relatorio.csv' -NoTypeInformation"
+    default {
+        Write-Host "Opcao invalida. O script sera encerrado." -ForegroundColor Red
     }
-}
-else {
-    Write-Host "Nenhum computador foi processado." -ForegroundColor Yellow
 }
 
 # --- Fim do Script ---
