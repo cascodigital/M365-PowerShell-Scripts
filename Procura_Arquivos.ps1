@@ -1,193 +1,86 @@
 <#
 .SYNOPSIS
-    Localizador avancado de arquivos no OneDrive de usuarios Microsoft 365 com suporte a wildcards
+    Localizador avancado de arquivos no OneDrive - Versao com busca em multiplos usuarios
 
 .DESCRIPTION
-    Script interativo para busca abrangente de arquivos em drives OneDrive de usuarios especificos
-    no Microsoft 365. Utiliza Microsoft Graph API para acesso completo a todos os drives do usuario,
-    incluindo OneDrive pessoal e compartilhados. Suporte robusto a wildcards para buscas flexiveis
-    e relatorio detalhado com deteccao automatica de duplicatas.
+    Script com duas opcoes:
+    1. Buscar em OneDrive de usuario especifico
+    2. Buscar em todos os OneDrives de um dominio
     
-    Funcionalidades principais:
-    - Busca interativa com validacao de entrada de dados
-    - Suporte completo a wildcards (* e ?) para filtros avancados
-    - Pesquisa simultanea em todos os drives do usuario
-    - Deteccao automatica e alerta de arquivos duplicados
-    - Relatorio detalhado com caminho completo, tamanho e metadados
-    - Tratamento robusto de erros com sugestoes de solucao
-    - Interface colorida para melhor experiencia do usuario
-    
-    Tipos de busca suportados:
-    - Busca exata por nome completo
-    - Busca parcial com wildcards automaticos
-    - Filtros por extensao de arquivo
-    - Busca em qualquer parte do nome do arquivo
-
-.PARAMETER None
-    Script totalmente interativo - solicita todas as informacoes durante execucao
-
-.EXAMPLE
-    .\Find-OneDriveFiles.ps1
-    # Email usuario: joao.silva@cascodigital.com.br
-    # Filtro busca: relatorio_mensal
-    # Resultado: Encontra todos arquivos contendo 'relatorio_mensal' no nome
-
-.EXAMPLE
-    .\Find-OneDriveFiles.ps1  
-    # Email usuario: maria.santos@cascodigital.com.br
-    # Filtro busca: *.xlsx
-    # Resultado: Lista todos arquivos Excel no OneDrive do usuario
-
-.EXAMPLE
-    # Busca com wildcard manual para contratos
-    .\Find-OneDriveFiles.ps1
-    # Email usuario: diretor@cascodigital.com.br
-    # Filtro busca: contrato_*_2024.*
-    # Resultado: Encontra contratos de 2024 com qualquer nome e extensao
-
-.INPUTS
-    String - Email/UPN do usuario alvo para busca
-    String - Filtro de busca com suporte a wildcards (* e ?)
-
-.OUTPUTS
-    - Console: Interface interativa colorida com progresso
-    - Lista: Arquivos encontrados com metadados completos
-    - Relatorio: Estatisticas de busca e alertas de duplicatas
-    - Detalhes: Nome, caminho, drive, tamanho, data modificacao, ID
-
 .NOTES
-    Autor         : Andre Kittler  
-    Versao        : 3.0
-    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
-    
-    Requisitos Microsoft Graph:
-    - Modulo Microsoft.Graph.PowerShell instalado
-    - Conexao ativa ao Microsoft Graph
-    - Permissoes de API obrigatorias:
-      * User.Read.All (leitura de usuarios)
-      * Files.Read.All (acesso a arquivos OneDrive)
-    
-    Privilegios administrativos necessarios:
-    - SharePoint Administrator OU
-    - Global Administrator OU
-    - Global Reader (para busca read-only)
-    
-    Wildcards suportados:
-    - * : Qualquer sequencia de caracteres
-    - ? : Qualquer caractere unico
-    - Aplicacao automatica se nenhum wildcard informado
-    
-    Drives pesquisados:
-    - OneDrive pessoal do usuario
-    - OneDrive compartilhados (se acessiveis)
-    - Sites SharePoint associados ao usuario
-    
-    Limitacoes conhecidas:
-    - Arquivos em Teams podem nao aparecer
-    - Dependente de permissoes do usuario consultante
-    - Drives inacessiveis sao ignorados silenciosamente
-
-.LINK
-    https://docs.microsoft.com/en-us/graph/permissions-reference#files-permissions
+    Autor: Andre Kittler  
+    Versao: 4.0
 #>
 
+# Limpar console
+Clear-Host
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "           LOCALIZADOR DE ARQUIVOS NO ONEDRIVE" -ForegroundColor Cyan
+Write-Host "               VERSAO MULTIPLOS USUARIOS" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Solicita o email do usuario
-do {
-    $usuarioAlvoUPN = Read-Host "Digite o email do usuario para pesquisar"
-    if ([string]::IsNullOrWhiteSpace($usuarioAlvoUPN)) {
-        Write-Host "Email nao pode estar vazio. Tente novamente." -ForegroundColor Red
-    }
-} while ([string]::IsNullOrWhiteSpace($usuarioAlvoUPN))
-
-Write-Host ""
-
-# Solicita o nome do arquivo com explicacao dos filtros
-Write-Host "OPCOES DE FILTRO PARA BUSCA DE ARQUIVO:" -ForegroundColor Yellow
-Write-Host "  Exemplo 1: mikrotik          (encontra qualquer arquivo com 'mikrotik' no nome)"
-Write-Host "  Exemplo 2: Mikrotik_V2.docx  (busca pelo nome exato)"
-Write-Host "  Exemplo 3: Mikrotik_V2.*     (qualquer Mikrotik_V2 com qualquer extensao)"
-Write-Host "  Exemplo 4: *v2*              (qualquer arquivo com 'v2' em qualquer parte do nome)"
-Write-Host "  Exemplo 5: *.docx            (todos os arquivos .docx)"
-Write-Host ""
-
-do {
-    $nomeArquivo = Read-Host "Digite o filtro de busca para o arquivo"
-    if ([string]::IsNullOrWhiteSpace($nomeArquivo)) {
-        Write-Host "Nome do arquivo nao pode estar vazio. Tente novamente." -ForegroundColor Red
-    }
-} while ([string]::IsNullOrWhiteSpace($nomeArquivo))
-
-# Adiciona wildcards automaticamente se nao houver
-if (-not ($nomeArquivo.Contains("*"))) {
-    $nomeArquivoFiltro = "*$nomeArquivo*"
-    Write-Host "Filtro aplicado: $nomeArquivoFiltro" -ForegroundColor Gray
-} else {
-    $nomeArquivoFiltro = $nomeArquivo
+# Funcao para capturar entrada do usuario
+function Get-UserInput {
+    param(
+        [string]$Prompt,
+        [switch]$Required
+    )
+    
+    do {
+        Write-Host $Prompt -NoNewline -ForegroundColor Yellow
+        Write-Host ": " -NoNewline
+        $userInput = [Console]::ReadLine()
+        
+        if ($Required -and [string]::IsNullOrWhiteSpace($userInput)) {
+            Write-Host "Entrada nao pode estar vazia. Tente novamente." -ForegroundColor Red
+            Write-Host ""
+        }
+    } while ($Required -and [string]::IsNullOrWhiteSpace($userInput))
+    
+    return $userInput.Trim()
 }
 
-Write-Host ""
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "INICIANDO BUSCA..." -ForegroundColor Cyan
-Write-Host "Usuario: $usuarioAlvoUPN" -ForegroundColor White
-Write-Host "Filtro: $nomeArquivoFiltro" -ForegroundColor White
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host ""
+# Funcao para verificar se OneDrive esta provisionado
+function Test-OneDriveProvisioned {
+    param($UserId)
+    
+    try {
+        $userDrive = Get-MgUserDefaultDrive -UserId $UserId -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
 
-try {
-    # Conexao
-    $conexao = Get-MgContext
-    if (-not $conexao) {
-        Write-Host "Conectando ao Microsoft Graph..." -ForegroundColor Yellow
-        $scopes = @("User.Read.All", "Files.Read.All")
-        Connect-MgGraph -Scopes $scopes
-    } else {
-        Write-Host "Ja conectado ao Microsoft Graph." -ForegroundColor Green
+# Funcao para buscar arquivos em um usuario
+function Search-UserFiles {
+    param(
+        $Usuario,
+        $FiltroArquivo
+    )
+    
+    $arquivosEncontrados = @()
+    
+    if (-not (Test-OneDriveProvisioned -UserId $Usuario.Id)) {
+        return @{
+            Usuario = $Usuario
+            Status = "OneDrive nao provisionado"
+            Arquivos = @()
+        }
     }
     
-    Write-Host "Buscando pelo usuario $($usuarioAlvoUPN)..." -ForegroundColor Yellow
-    $usuarioAlvo = Get-MgUser -UserId $usuarioAlvoUPN -ErrorAction Stop
-    Write-Host "Usuario encontrado: $($usuarioAlvo.DisplayName)" -ForegroundColor Green
-    Write-Host "ID: $($usuarioAlvo.Id)" -ForegroundColor Gray
-
-    Write-Host ""
-    Write-Host "Obtendo drives do usuario..." -ForegroundColor Yellow
-    $drives = Get-MgUserDrive -UserId $usuarioAlvo.Id -ErrorAction Stop
-    
-    Write-Host "------------------------------------------------------------"
-    Write-Host "DRIVES ENCONTRADOS:" -ForegroundColor Cyan
-    foreach ($drive in $drives) {
-        Write-Host "  $($drive.Name) - Tipo: $($drive.DriveType)"
-    }
-    Write-Host "------------------------------------------------------------"
-    
-    $todosArquivosEncontrados = @()
-    $drivesPesquisados = 0
-    $drivesComSucesso = 0
-    
-    # Pesquisa em todos os drives
-    foreach ($drive in $drives) {
-        $drivesPesquisados++
-        Write-Host "[$drivesPesquisados/$($drives.Count)] Pesquisando no drive: $($drive.Name)" -ForegroundColor Yellow
+    try {
+        $drives = Get-MgUserDrive -UserId $Usuario.Id -All -ErrorAction Stop
         
-        try {
-            Write-Host "  Carregando arquivos..." -ForegroundColor Cyan
-            $todosItens = Get-MgUserDriveItem -UserId $usuarioAlvo.Id -DriveId $drive.Id -All -Filter "file ne null" -ErrorAction Stop
-            
-            # Filtra arquivos usando o filtro fornecido pelo usuario
-            $arquivosEncontrados = $todosItens | Where-Object { $_.Name -like $nomeArquivoFiltro }
-            
-            if ($arquivosEncontrados) {
-                $drivesComSucesso++
-                Write-Host "  ENCONTRADOS: $($arquivosEncontrados.Count) arquivo(s)!" -ForegroundColor Green
+        foreach ($drive in $drives) {
+            try {
+                $todosItens = Get-MgUserDriveItem -UserId $Usuario.Id -DriveId $drive.Id -All -Filter "file ne null" -ErrorAction Stop
+                $arquivos = $todosItens | Where-Object { $_.Name -like $FiltroArquivo }
                 
-                foreach ($arquivo in $arquivosEncontrados) {
-                    # Monta o caminho completo do arquivo
+                foreach ($arquivo in $arquivos) {
                     $caminhoCompleto = ""
                     if ($arquivo.ParentReference -and $arquivo.ParentReference.Path) {
                         $caminhoRelativo = $arquivo.ParentReference.Path -replace "^.+:", ""
@@ -196,89 +89,242 @@ try {
                         $caminhoCompleto = $arquivo.Name
                     }
                     
-                    $todosArquivosEncontrados += [PSCustomObject]@{
-                        Nome = $arquivo.Name
+                    $arquivosEncontrados += [PSCustomObject]@{
+                        Usuario = $Usuario.DisplayName
+                        Email = $Usuario.Mail
+                        NomeArquivo = $arquivo.Name
                         CaminhoCompleto = $caminhoCompleto
                         Drive = $drive.Name
-                        Tamanho = $arquivo.Size
+                        Tamanho = if ($arquivo.Size) { $arquivo.Size } else { 0 }
+                        TamanhoKB = if ($arquivo.Size) { [math]::Round($arquivo.Size / 1KB, 2) } else { 0 }
                         UltimaModificacao = $arquivo.LastModifiedDateTime
                         ID = $arquivo.Id
                     }
                 }
-            } else {
-                Write-Host "  Nenhum arquivo encontrado neste drive" -ForegroundColor Gray
             }
-            
-        } catch {
-            Write-Host "  Drive nao acessivel (ignorando)" -ForegroundColor Gray
-        }
-    }
-    
-    # Resultado final
-    Write-Host ""
-    Write-Host "============================================================"
-    if ($todosArquivosEncontrados.Count -gt 0) {
-        Write-Host "BUSCA CONCLUIDA COM SUCESSO!" -ForegroundColor Green
-        Write-Host "============================================================" -ForegroundColor Green
-        Write-Host "TOTAL ENCONTRADO: $($todosArquivosEncontrados.Count) arquivo(s)" -ForegroundColor Green
-        Write-Host "DRIVES PESQUISADOS: $drivesPesquisados"
-        Write-Host "DRIVES COM RESULTADOS: $drivesComSucesso"
-        
-        # Verifica se ha duplicatas
-        if ($todosArquivosEncontrados.Count -gt 1) {
-            $nomesDuplicados = $todosArquivosEncontrados | Group-Object Nome | Where-Object Count -gt 1
-            if ($nomesDuplicados) {
-                Write-Host ""
-                Write-Host "ALERTA: DUPLICATAS ENCONTRADAS!" -ForegroundColor Red
-                foreach ($grupo in $nomesDuplicados) {
-                    Write-Host "  Arquivo '$($grupo.Name)' aparece $($grupo.Count) vezes" -ForegroundColor Red
-                }
+            catch {
+                # Ignorar drives inacessiveis
             }
         }
         
-        Write-Host "============================================================"
-        
-        foreach ($arquivo in $todosArquivosEncontrados) {
-            Write-Host ""
-            Write-Host "ARQUIVO: $($arquivo.Nome)" -ForegroundColor Yellow
-            Write-Host "CAMINHO: $($arquivo.CaminhoCompleto)" -ForegroundColor White
-            Write-Host "DRIVE: $($arquivo.Drive)" -ForegroundColor Cyan
-            Write-Host "TAMANHO: $([math]::Round($arquivo.Tamanho / 1KB, 2)) KB"
-            Write-Host "MODIFICADO: $($arquivo.UltimaModificacao)"
-            Write-Host "ID: $($arquivo.ID)" -ForegroundColor Gray
+        return @{
+            Usuario = $Usuario
+            Status = "Sucesso"
+            Arquivos = $arquivosEncontrados
         }
-        
-    } else {
-        Write-Host "BUSCA CONCLUIDA - NENHUM ARQUIVO ENCONTRADO" -ForegroundColor Yellow
-        Write-Host "============================================================" -ForegroundColor Yellow
-        Write-Host "Nenhum arquivo encontrado com o filtro: $nomeArquivoFiltro"
-        Write-Host "DRIVES PESQUISADOS: $drivesPesquisados"
-        Write-Host ""
-        Write-Host "SUGESTOES:" -ForegroundColor Cyan
-        Write-Host "1. Verifique se o nome esta correto"
-        Write-Host "2. Tente usar um filtro mais amplo (ex: *parte_do_nome*)"
-        Write-Host "3. Verifique se tem permissao para acessar o arquivo"
-        Write-Host "4. O arquivo pode estar em SharePoint ou Teams"
     }
-    
-    Write-Host ""
-    Write-Host "============================================================"
+    catch {
+        return @{
+            Usuario = $Usuario
+            Status = "Erro: $($_.Exception.Message)"
+            Arquivos = @()
+        }
+    }
+}
 
-}
-catch {
-    Write-Host ""
-    Write-Host "ERRO durante a execucao:" -ForegroundColor Red
-    Write-Host "$($_.Exception.Message)" -ForegroundColor Red
-    
-    if ($_.Exception.Message -like "*not found*" -or $_.Exception.Message -like "*does not exist*") {
-        Write-Host ""
-        Write-Host "DICA: Verifique se o email esta correto e se o usuario existe." -ForegroundColor Yellow
-    }
-}
-finally {
-    # Disconnect-MgGraph
+# Escolher modo de operacao
+Write-Host "ESCOLHA O MODO DE BUSCA:" -ForegroundColor Cyan
+Write-Host "1. Buscar em OneDrive de usuario especifico" -ForegroundColor White
+Write-Host "2. Buscar em todos os OneDrives de um dominio" -ForegroundColor White
+Write-Host ""
+
+$opcao = Get-UserInput -Prompt "Digite 1 ou 2" -Required
+
+while ($opcao -notin @("1", "2")) {
+    Write-Host "Opcao invalida. Digite 1 ou 2." -ForegroundColor Red
+    $opcao = Get-UserInput -Prompt "Digite 1 ou 2" -Required
 }
 
 Write-Host ""
+Write-Host "============================================================" -ForegroundColor Cyan
+
+# Verificar conexao ao Graph
+try {
+    $conexao = Get-MgContext
+    if (-not $conexao) {
+        Write-Host "Conectando ao Microsoft Graph..." -ForegroundColor Yellow
+        
+        $scopes = @(
+            "https://graph.microsoft.com/Files.Read.All",
+            "https://graph.microsoft.com/User.Read.All",
+            "https://graph.microsoft.com/Directory.Read.All"
+        )
+        
+        Connect-MgGraph -Scopes $scopes -ErrorAction Stop
+        Write-Host "Conectado com sucesso ao Microsoft Graph" -ForegroundColor Green
+    } else {
+        Write-Host "Ja conectado ao Microsoft Graph" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Host "ERRO ao conectar ao Microsoft Graph:" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    return
+}
+
+Write-Host ""
+
+if ($opcao -eq "1") {
+    # MODO 1: Usuario especifico
+    Write-Host "MODO: BUSCA EM USUARIO ESPECIFICO" -ForegroundColor Cyan
+    Write-Host ""
+    
+    $usuarioAlvoUPN = Get-UserInput -Prompt "Digite o email do usuario para pesquisar" -Required
+    
+    Write-Host ""
+    Write-Host "OPCOES DE FILTRO PARA BUSCA DE ARQUIVO:" -ForegroundColor Yellow
+    Write-Host "  Exemplo 1: mikrotik          (encontra qualquer arquivo com 'mikrotik' no nome)"
+    Write-Host "  Exemplo 2: Mikrotik_V2.docx  (busca pelo nome exato)"
+    Write-Host "  Exemplo 3: Mikrotik_V2.*     (qualquer Mikrotik_V2 com qualquer extensao)"
+    Write-Host "  Exemplo 4: *v2*              (qualquer arquivo com 'v2' em qualquer parte do nome)"
+    Write-Host "  Exemplo 5: *.docx            (todos os arquivos .docx)"
+    Write-Host ""
+    
+    $nomeArquivo = Get-UserInput -Prompt "Digite o filtro de busca para o arquivo" -Required
+    
+    if (-not ($nomeArquivo.Contains("*"))) {
+        $nomeArquivoFiltro = "*$nomeArquivo*"
+        Write-Host "Filtro aplicado: $nomeArquivoFiltro" -ForegroundColor Gray
+    } else {
+        $nomeArquivoFiltro = $nomeArquivo
+    }
+    
+    try {
+        Write-Host ""
+        Write-Host "Buscando usuario $usuarioAlvoUPN..." -ForegroundColor Yellow
+        $usuarioAlvo = Get-MgUser -UserId $usuarioAlvoUPN -ErrorAction Stop
+        
+        Write-Host "Usuario encontrado: $($usuarioAlvo.DisplayName)" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Iniciando busca..." -ForegroundColor Yellow
+        
+        $resultado = Search-UserFiles -Usuario $usuarioAlvo -FiltroArquivo $nomeArquivoFiltro
+        
+        if ($resultado.Arquivos.Count -gt 0) {
+            Write-Host ""
+            Write-Host "ARQUIVOS ENCONTRADOS: $($resultado.Arquivos.Count)" -ForegroundColor Green
+            Write-Host "============================================================" -ForegroundColor Green
+            
+            foreach ($arquivo in $resultado.Arquivos) {
+                Write-Host ""
+                Write-Host "ARQUIVO: $($arquivo.NomeArquivo)" -ForegroundColor Yellow
+                Write-Host "CAMINHO: $($arquivo.CaminhoCompleto)" -ForegroundColor White
+                Write-Host "DRIVE: $($arquivo.Drive)" -ForegroundColor Cyan
+                Write-Host "TAMANHO: $($arquivo.TamanhoKB) KB"
+                Write-Host "MODIFICADO: $($arquivo.UltimaModificacao)"
+            }
+        } else {
+            Write-Host ""
+            Write-Host "NENHUM ARQUIVO ENCONTRADO" -ForegroundColor Yellow
+            Write-Host "Status: $($resultado.Status)" -ForegroundColor Gray
+        }
+    }
+    catch {
+        Write-Host "ERRO: $($_.Exception.Message)" -ForegroundColor Red
+    }
+} else {
+    # MODO 2: Todos usuarios do dominio
+    Write-Host "MODO: BUSCA EM TODOS OS USUARIOS DO DOMINIO" -ForegroundColor Cyan
+    Write-Host ""
+    
+    $dominio = Get-UserInput -Prompt "Digite o dominio (ex: cascodigital.com.br)" -Required
+    
+    Write-Host ""
+    Write-Host "OPCOES DE FILTRO PARA BUSCA DE ARQUIVO:" -ForegroundColor Yellow
+    Write-Host "  Exemplo 1: mikrotik          (encontra qualquer arquivo com 'mikrotik' no nome)"
+    Write-Host "  Exemplo 2: Mikrotik_V2.docx  (busca pelo nome exato)"
+    Write-Host "  Exemplo 3: *.pdf             (todos arquivos PDF)"
+    Write-Host ""
+    
+    $nomeArquivo = Get-UserInput -Prompt "Digite o filtro de busca para o arquivo" -Required
+    
+    if (-not ($nomeArquivo.Contains("*"))) {
+        $nomeArquivoFiltro = "*$nomeArquivo*"
+        Write-Host "Filtro aplicado: $nomeArquivoFiltro" -ForegroundColor Gray
+    } else {
+        $nomeArquivoFiltro = $nomeArquivo
+    }
+    
+    try {
+        Write-Host ""
+        Write-Host "Buscando usuarios do dominio $dominio..." -ForegroundColor Yellow
+        
+        # Buscar todos usuarios do dominio
+        $todosUsuarios = Get-MgUser -All | Where-Object { 
+            $_.Mail -like "*@$dominio" -or $_.UserPrincipalName -like "*@$dominio" 
+        }
+        
+        if (-not $todosUsuarios -or $todosUsuarios.Count -eq 0) {
+            Write-Host "Nenhum usuario encontrado no dominio $dominio" -ForegroundColor Red
+            return
+        }
+        
+        Write-Host "Usuarios encontrados: $($todosUsuarios.Count)" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "============================================================"
+        Write-Host "INICIANDO BUSCA EM TODOS OS USUARIOS..."
+        Write-Host "============================================================"
+        Write-Host ""
+        
+        $todosResultados = @()
+        $contador = 0
+        
+        foreach ($usuario in $todosUsuarios) {
+            $contador++
+            Write-Host "[$contador/$($todosUsuarios.Count)] Processando: $($usuario.DisplayName) ($($usuario.Mail))" -ForegroundColor Yellow
+            
+            $resultado = Search-UserFiles -Usuario $usuario -FiltroArquivo $nomeArquivoFiltro
+            
+            Write-Host "  Status: $($resultado.Status)" -ForegroundColor Gray
+            if ($resultado.Arquivos.Count -gt 0) {
+                Write-Host "  Encontrados: $($resultado.Arquivos.Count) arquivo(s)" -ForegroundColor Green
+                $todosResultados += $resultado.Arquivos
+            }
+            
+            Write-Host ""
+        }
+        
+        # Gerar relatorio
+        Write-Host "============================================================"
+        Write-Host "BUSCA CONCLUIDA!" -ForegroundColor Green
+        Write-Host "============================================================"
+        Write-Host "Total de arquivos encontrados: $($todosResultados.Count)" -ForegroundColor Green
+        
+        if ($todosResultados.Count -gt 0) {
+            # Gerar arquivo CSV
+            $nomeRelatorio = "OneDrive_Busca_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').csv"
+            $todosResultados | Export-Csv -Path $nomeRelatorio -NoTypeInformation -Encoding UTF8
+            
+            Write-Host "Relatorio salvo em: $($PWD)\$nomeRelatorio" -ForegroundColor Cyan
+            Write-Host ""
+            
+            # Mostrar resumo por usuario
+            $resumoPorUsuario = $todosResultados | Group-Object Usuario | Sort-Object Count -Descending
+            
+            Write-Host "RESUMO POR USUARIO:" -ForegroundColor Cyan
+            foreach ($grupo in $resumoPorUsuario) {
+                Write-Host "  $($grupo.Name): $($grupo.Count) arquivo(s)" -ForegroundColor White
+            }
+            
+            Write-Host ""
+            Write-Host "PRIMEIROS 10 ARQUIVOS ENCONTRADOS:" -ForegroundColor Cyan
+            $todosResultados | Select-Object -First 10 | ForEach-Object {
+                Write-Host "  $($_.Usuario): $($_.NomeArquivo)" -ForegroundColor White
+            }
+            
+            if ($todosResultados.Count -gt 10) {
+                Write-Host "  ... e mais $($todosResultados.Count - 10) arquivo(s). Veja o relatorio completo no CSV." -ForegroundColor Gray
+            }
+        } else {
+            Write-Host "Nenhum arquivo encontrado em todos os usuarios pesquisados." -ForegroundColor Yellow
+        }
+    }
+    catch {
+        Write-Host "ERRO: $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+Write-Host ""
+Write-Host "============================================================"
 Write-Host "Pressione ENTER para fechar..." -ForegroundColor Gray
-Read-Host
+$null = [Console]::ReadLine()
