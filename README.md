@@ -64,11 +64,12 @@ Automatiza a geração e aplicação de **senhas aleatórias** para usuários de
 
 #### Procura_Arquivos.ps1
 
-Localiza arquivos por nome no **OneDrive for Business** de um usuário específico, de forma interativa.
+Localiza arquivos por nome no OneDrive for Business de usuário específico ou todos os usuários de um domínio.
 
-* **Funcionalidades**: Busca interativa, suporte a wildcards (`*`), saída detalhada.
-* **Pré-requisitos**: Módulo `Microsoft.Graph`, permissões de API (`User.Read.All`, `Files.Read.All`).
-* **Como Usar**: Execute `.\Procura_Arquivos.ps1` e siga as instruções no console.
+* **Funcionalidades**: Busca interativa com dois modos (usuário único ou domínio completo), suporte a wildcards (*, ?), detecção de duplicatas, relatório CSV automático, verificação de provisionamento.Busca interativa com dois modos (usuário único ou domínio completo), suporte a wildcards (*, ?), detecção de duplicatas, relatório CSV automático, verificação de provisionamento.
+* **Pré-requisitos**: Módulo Microsoft.Graph (Authentication, Users, Files), permissões de API (User.Read.All, Files.Read.All, Directory.Read.All), privilégios administrativos.
+* **Como Usar**: Execute .\Procura_Arquivos.ps1, escolha modo 1 (usuário específico) ou modo 2 (todos do domínio), digite domínio/email + filtro de busca. Modo 2 gera CSV automaticamente.
+
 
 #### Remover_Email.ps1
 
