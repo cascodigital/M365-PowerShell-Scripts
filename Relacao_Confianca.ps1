@@ -1,32 +1,19 @@
 <#
 .SYNOPSIS
-    Auditoria automatizada de relacao de confianca entre computadores e dominio Active Directory.
+    Auditoria completa de relacao de confianca entre computadores e dominio Active Directory.
 
 .DESCRIPTION
-    Script completo para diagnostico e auditoria da integridade de relacoes de confianca entre
-    computadores Windows e controladores de dominio Active Directory. Oferece dois modos de operacao:
-    1. Interativo: Verifica um computador especifico e exibe o resultado no console.
-    2. Lote: Verifica todos os computadores ativos no AD e gera um relatorio detalhado em Excel.
-
-    Utiliza o comando 'nltest' nativo para uma verificacao precisa do canal seguro, sem dependencias
-    de WinRM ou PSRemoting.
-
-    Funcionalidades principais:
-    - Menu de selecao para verificacao unica ou em lote.
-    - Descoberta automatica de todos os computadores ativos no AD (modo lote).
-    - Verificacao de conectividade de rede (ping) pre-validacao.
-    - Teste de canal seguro usando nltest.
-    - Calculo automatico de tempo offline baseado em LastLogonDate.
-    - Classificacao automatica: OK, FALHA (Confianca), Offline.
-    - Exportacao para Excel formatado com tabelas (modo lote).
-    - Relatorio de resumo com contadores por status (modo lote).
-    - Tratamento robusto de erros.
+    Script unificado que combina verificacao rapida em lote com diagnostico detalhado de falhas.
+    Oferece tres modos de operacao:
+    1. Verificacao rapida: Testa um computador especifico com nltest.
+    2. Diagnostico completo: Analise profunda de problemas de confianca.
+    3. Lote: Verifica todos os computadores do dominio e gera relatorio Excel.
 
 .PARAMETER None
     O script solicita a selecao do modo de operacao no inicio.
 
 .EXAMPLE
-    .\Test-DomainTrustRelationship_v2.ps1
+    BuscaRelacaoConfianca.ps1
     # Apresenta um menu para escolher entre verificar uma maquina ou todas.
 
 .OUTPUTS
@@ -34,8 +21,8 @@
     - Arquivo Excel (.xlsx): C:\Temp\Relatorio_RelacaoDeConfianca_[timestamp].xlsx (apenas no modo lote).
 
 .NOTES
-    Autor         : Andre Kittler (Modificado para interatividade)
-    Versao        : 2.0
+    Autor         : Andre Kittler
+    Versao        :  3.1 (Corrigida logica de sincronizacao) - Combina verificacao rapida + diagnostico detalhado + relatorio em lote
     Compatibilidade: PowerShell 5.1+, Windows Server/Client
 
     Requisitos obrigatorios:
