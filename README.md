@@ -15,7 +15,6 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 | :--- | :--- |
 | **[Ver_MfaComplianceReport.ps1](#ver_mfacompliancereportps1)** | Gera um relatório de conformidade MFA e entra em modo de consulta interativo. |
 | **[Ver_Emails.ps1](#ver_emailsps1)** | Gera um relatório completo de todos os e-mails vigentes na organização. |
-| **[Procura_Sharepoint.ps1](#Procura_Sharepointps1)** | Busca avançada de arquivos em sites SharePoint com wildcards e navegação recursiva. |
 | **[Alterar_Senhas_365.ps1](#alterar_senhas_365ps1)** | Automatiza a geração e aplicação de senhas aleatórias para usuários de um domínio. |
 | **[Procura_Arquivos.ps1](#procura_arquivosps1)** | Localiza arquivos no OneDrive for Business de um usuário de forma interativa. |
 | **[Remover_Email.ps1](#remover_emailps1)** | Remove e-mails específicos de todas as caixas de correio da organização. |
@@ -53,15 +52,6 @@ Gera um **relatório completo de todos os e-mails vigentes** na organização Mi
 * **Funcionalidades**: Categorização inteligente, identificação de tipos de grupo, detecção de aliases, relatório executivo em Excel com abas organizadas.
 * **Pré-requisitos**: Módulos `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `ImportExcel`. Permissões de API (`User.Read.All`, `Group.Read.All`).
 * **Como Usar**: Execute `.\Ver_Emails.ps1` e aguarde a geração do arquivo Excel.
-
-#### Procura_Sharepoint.ps1
-
-Executa busca avançada e recursiva de arquivos em sites SharePoint Online usando Microsoft Graph API. Suporta wildcards completos, navegação em todas as bibliotecas de documentos e modo verbose para troubleshooting.
-
-* **Funcionalidades**: Busca recursiva em pastas/subpastas, wildcards (*.pdf, documento*.*), modo verbose detalhado, detecção robusta de arquivos vs pastas, resultados organizados com metadados completos.
-* **Pré-requisitos**: Módulo Microsoft.Graph, permissões de API (Sites.Read.All, Files.Read.All), acesso ao site SharePoint especificado.
-* **Como Usar**: Execute .\Buscar_Arquivos_SharePoint.ps1, informe URL do site, padrão de busca e opção de modo verbose.
-
 
 
 #### Alterar_Senhas_365.ps1
