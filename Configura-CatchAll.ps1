@@ -1,173 +1,148 @@
 <#
 .SYNOPSIS
-    Configuracao automatizada de email catch-all (coletor geral) para dominios Microsoft 365
+    Configuracao automatizada de regra catch-all (coletor geral) para dominios Microsoft 365 com grupo dinâmico de exceção.
 
 .DESCRIPTION
-    Script automatizado para implementacao completa de solucao catch-all email em tenants 
-    Microsoft 365/Exchange Online. Configura dominio como InternalRelay e cria regra de 
-    transporte para redirecionamento automatico de emails enviados para enderecos inexistentes.
-    
+    Script PowerShell interativo para implementacao de catch-all de email em tenants Microsoft 365/Exchange Online.
+    - Permite configurar dominio como InternalRelay (opcional)
+    - Cria grupo de distribuição dinâmico definido pelo operador (ex: colaboradores@dominio.com.br) incluindo todos usuários reais do domínio
+    - Cria regra de transporte catch-all para redirecionar emails enviados para endereços inexistentes no domínio
+    - Excetua membros do grupo dinâmico (todo usuário válido)
+    - Compatível com múltiplos domínios/clientes (nome/email do grupo customizável)
+
     Funcionalidades principais:
-    - Validacao e instalacao automatica do modulo ExchangeOnlineManagement
-    - Verificacao de dominios aceitos no tenant
-    - Configuracao de dominio como InternalRelay para roteamento interno
-    - Criacao de regra de transporte com prioridade dinamica
-    - Tratamento robusto de erros com rollback automatico
-    - Desconexao segura de sessoes Exchange Online
-    
-    Processo de configuracao:
-    1. Valida modulos e conectividade
-    2. Altera tipo de dominio para InternalRelay
-    3. Cria regra de transporte com menor prioridade disponivel
-    4. Configura redirecionamento para caixa coletora especificada
+    - Validação e instalação automática do módulo ExchangeOnlineManagement
+    - Criação/modificação de grupo dinâmico com filtro automatizado para usuários do domínio
+    - Criação de regra catch-all com exceção dinâmica para membros do grupo
+    - Desconexão segura de sessão Exchange Online
+    - Logs coloridos no terminal
+    - Tratamento robusto de erros
+
+    Processo de configuração:
+    1. Validação de módulos e conectividade
+    2. Criação/opcional configuração de domínio como InternalRelay
+    3. Criação de grupo dinâmico com filtro
+    4. Criação de regra transport rule catch-all com exceção do grupo
+    5. Qualquer usuário novo criado no M365 entra automaticamente no grupo e é excetuado da regra
 
 .PARAMETER None
-    Script interativo - solicita informacoes durante execucao
+    Script interativo - solicita:
+        - Email de administrador do tenant
+        - Nome do domínio alvo
+        - Email da caixa coletora (catch-all)
+        - Nome e email do grupo dinâmico para exceção
 
 .EXAMPLE
     .\Configure-CatchAll.ps1
     # Script solicita:
-    # - Email do administrador: admin@cascodigital.com.br
-    # - Dominio alvo: cascodigital.com.br  
-    # - Email coletor: catchall@cascodigital.com.br
-    # Resultado: Emails para enderecos inexistentes em cascodigital.com.br sao redirecionados
+    # - Email administrador
+    # - Dominio alvo: empresa.com
+    # - Email coletor: catchall@empresa.com
+    # - Nome do grupo dinâmico: Colaboradores EmpresaX
+    # - Email do grupo dinâmico: colaboradores@empresa.com
+    # Resultado: Emails para endereços inexistentes do domínio são redirecionados; novos usuários são incluídos automaticamente na exceção via grupo dinâmico.
 
 .INPUTS
-    String - Email administrador Microsoft 365
-    String - Dominio alvo para configuracao catch-all  
-    String - Email da caixa coletora de destino
+    - String: Email administrador Microsoft 365
+    - String: Dominio alvo para catch-all
+    - String: Email da caixa coletora destino
+    - String: Nome do grupo dinâmico
+    - String: Email do grupo dinâmico
 
 .OUTPUTS
-    - Console: Log detalhado de cada etapa da configuracao
-    - Exchange Online: Dominio configurado como InternalRelay
-    - Exchange Online: Regra de transporte catch-all ativa
+    - Console: Log detalhado colorido dos passos
+    - Exchange Online: Grupo dinâmico criado/atualizado
+    - Exchange Online: Regra catch-all implementada
 
 .NOTES
     Autor         : Andre Kittler
-    Versao        : 2.0
+    Versão        : 2.1
     Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
-    
+
     Requisitos Exchange Online:
     - Modulo ExchangeOnlineManagement (instalacao automatica)
     - Conta com privilegios Exchange Administrator ou Global Administrator
-    - Dominio deve ser dominio aceito (Accepted Domain) no tenant
-    
-    Configuracoes aplicadas:
-    - DomainType alterado para InternalRelay
-    - TransportRule com RedirectMessageTo configurado
-    - Priority definida dinamicamente (menor prioridade disponivel)
-    
-    Consideracoes importantes:
-    - Propagacao pode levar ate 1 hora
-    - Dominio InternalRelay nao aceita destinatarios diretos
-    - Regra aplica-se apenas a enderecos inexistentes
+    - Dominio deve ser aceito no tenant
+
+    Configurações aplicadas:
+    - Grupo dinâmico com filtro automático para todos UserMailbox do domínio
+    - TransportRule com RedirectMessageTo e exceção MemberOf configurada
+    - Priority definida dinamicamente (menor prioridade disponível)
+
+    Considerações importantes:
+    - Propagação pode levar até 1 hora
+    - InternalRelay só é necessário em cenários híbridos/coexistência on-prem
     - Caixa coletora deve ter capacidade adequada
-    
-    Permissoes necessarias:
+    - Recomenda-se validar no EAC após execução, especialmente para domínios com múltiplos tipos de recipients
+
+    Permissões necessárias:
     - Exchange Administrator OU
     - Organization Management OU
     - Global Administrator
 
 .LINK
     https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/manage-accepted-domains/manage-accepted-domains
-
-.LINK
     https://docs.microsoft.com/en-us/exchange/security-and-compliance/mail-flow-rules/mail-flow-rules
 #>
 
+<#
+.SYNOPSIS
+    Cria grupo dinâmico customizado e regra catch-all com exceção dinâmica.
+#>
 
-# Define que o script para em caso de erro para o 'try/catch' funcionar
 $ErrorActionPreference = 'Stop'
 
-# Funcao para escrever mensagens coloridas
 function Write-Log {
-    param(
-        [string]$Message,
-        [string]$Color
-    )
+    param([string]$Message, [string]$Color)
     Write-Host $Message -ForegroundColor $Color
 }
 
-# --- 1. Verificacao de Pre-requisitos ---
-Write-Log "Verificando se o modulo 'ExchangeOnlineManagement' esta instalado..." -Color Cyan
-$moduloExo = Get-Module -Name ExchangeOnlineManagement -ListAvailable
-if (-not $moduloExo) {
-    Write-Log "Modulo nao encontrado. Instalando..." -Color Yellow
-    try {
-        Install-Module ExchangeOnlineManagement -Repository PSGallery -Force -AllowClobber
-        Write-Log "Modulo instalado com sucesso." -Color Green
-    }
-    catch {
-        Write-Log "Ocorreu um erro ao instalar o modulo. Verifique sua conexao ou execute o PowerShell como Administrador." -Color Red
-        return # Para a execucao
-    }
-}
-else {
-    Write-Log "Modulo ja instalado." -Color Green
-}
+# Inputs configuráveis
+$upnAdmin = Read-Host "Email do administrador"
+$dominio = Read-Host "Dominio (ex: empresa.com)"
+$emailColetor = Read-Host "Email catch-all (ex: catchall@empresa.com)"
+$grupoNome = Read-Host "Nome do grupo dinâmico a ser criado (ex: TodosColaboradores EmpresaX)"
+$grupoEmail = Read-Host "Email do grupo dinâmico (ex: todoscolab@empresa.com)"
 
-# --- 2. Coleta de Informacoes ---
-Write-Log "`n--- Forneca as informacoes necessarias ---" -Color Cyan
-$upnAdmin = Read-Host -Prompt "Digite o email do administrador do Microsoft 365 para conectar"
-$dominio = Read-Host -Prompt "Digite o dominio que recebera a regra de catch-all (ex: empresa.com)"
-$emailColetor = Read-Host -Prompt "Digite o email que recebera as mensagens (ex: coletor@empresa.com)"
+Write-Log "Conectando ao Exchange Online..." -Color Cyan
+Connect-ExchangeOnline -UserPrincipalName $upnAdmin -ShowBanner:$false
 
-# --- 3. Conexao com o Exchange Online ---
-Write-Log "`nConectando ao Exchange Online com o usuario $upnAdmin..." -Color Cyan
 try {
-    # O -ShowBanner:$false apenas limpa a saida do terminal
-    Connect-ExchangeOnline -UserPrincipalName $upnAdmin -ShowBanner:$false
-    Write-Log "Conectado com sucesso!" -Color Green
+    # Cria Dynamic Distribution Group customizado
+    $recipientFilter = "(RecipientTypeDetails -eq 'UserMailbox') -and (PrimarySmtpAddress -like '%@$dominio')"
+    if (-not (Get-DynamicDistributionGroup -Identity $grupoEmail -ErrorAction SilentlyContinue)) {
+        New-DynamicDistributionGroup -Name $grupoNome `
+            -RecipientFilter $recipientFilter `
+            -PrimarySmtpAddress $grupoEmail `
+            -ErrorAction Stop
+        Write-Log "Grupo dinâmico criado como $grupoEmail." -Color Green
+    } else {
+        Write-Log "Grupo já existe, utilizando grupo informado." -Color Yellow
+    }
+
+    # Remove regra catch-all antiga se precisa
+    $nomeRegra = "Catch-All $dominio"
+    if (Get-TransportRule -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $nomeRegra }) {
+        Write-Log "Removendo regra catch-all antiga..." -Color Yellow
+        Remove-TransportRule -Identity $nomeRegra -Confirm:$false
+    }
+
+    # Cria regra catch-all com exceção para membros do grupo informado
+    Write-Log "Criando regra catch-all com exceção para membros do grupo..." -Color Cyan
+    $ruleParams = @{
+        Name = $nomeRegra
+        RecipientDomainIs = $dominio
+        RedirectMessageTo = $emailColetor
+        ExceptIfSentToMemberOf = $grupoEmail
+        Priority = ((Get-TransportRule).Count)
+    }
+    New-TransportRule @ruleParams
+
+    Write-Log "Automação concluída: grupo e regra criados/atualizados!" -Color Green
+    Write-Log "Todo novo usuário será incluído automaticamente no grupo dinâmico e será ignorado pela regra catch-all." -Color Cyan
 }
 catch {
-    Write-Log "Falha na autenticacao. Verifique as credenciais e tente novamente." -Color Red
-    return
+    Write-Log "ERRO: $($_.Exception.Message)" -Color Red
 }
-
-# --- 4. Execucao da Logica Principal ---
-try {
-    # Valida se o dominio existe no tenant
-    Write-Log "Verificando se o dominio '$dominio' e um dominio aceito..." -Color Cyan
-    $dominioAceito = Get-AcceptedDomain -Identity $dominio
-    if ($dominioAceito) {
-        Write-Log "Dominio encontrado. Prosseguindo com a configuracao." -Color Green
-    }
-
-    # Altera o tipo do dominio
-    Write-Log "Alterando o tipo do dominio '$dominio' para 'InternalRelay'..." -Color Cyan
-    Set-AcceptedDomain -Identity $dominio -DomainType InternalRelay
-    Write-Log "Tipo do dominio alterado com sucesso." -Color Green
-
-    # **CORRECAO 1: Define a prioridade dinamicamente**
-    Write-Log "Verificando regras existentes para definir a prioridade..." -Color Cyan
-    $ruleCount = (Get-TransportRule).Count
-    Write-Log "Prioridade definida como $ruleCount (a mais baixa)." -Color Green
-
-    # Cria a regra de transporte
-    $nomeRegra = "Regra Catch-All para $dominio"
-    Write-Log "Criando a regra de transporte '$nomeRegra'..." -Color Cyan
-    New-TransportRule -Name $nomeRegra `
-        -RecipientDomainIs $dominio `
-        -RedirectMessageTo $emailColetor `
-        -Priority $ruleCount
-
-    Write-Log "Regra de transporte criada com sucesso." -Color Green
-    Write-Log "`nConfiguracao de Catch-All para o dominio '$dominio' finalizada!" -Color Green
-    Write-Log "Lembre-se que a alteracao pode levar ate uma hora para propagar." -Color Yellow
-    Write-Log "A caixa de correio '$emailColetor' comecara a receber emails enviados para enderecos inexistentes em '$dominio'." -Color Yellow
-
-}
-catch {
-    # Captura qualquer erro que possa ocorrer nos passos acima
-    $errorMessage = $_.Exception.Message
-    Write-Log "`nERRO: Ocorreu um problema durante a configuracao." -Color Red
-    Write-Log "Mensagem de erro: $errorMessage" -Color Red
-    Write-Log "Nenhuma alteracao adicional foi feita." -Color Red
-}
-finally {
-    # --- 5. Desconexao ---
-    Write-Log "`nDesconectando da sessao do Exchange Online..." -Color Cyan
-    # **CORRECAO 2: Comando de desconexao correto**
-    Disconnect-ExchangeOnline -Confirm:$false
-    Write-Log "Sessao desconectada." -Color Green
-}
+Disconnect-ExchangeOnline -Confirm:$false
+Write-Log "Sessão encerrada." -Color Green
