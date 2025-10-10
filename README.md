@@ -31,6 +31,12 @@ Uma coleção de scripts PowerShell para automação e administração de ambien
 | **[GPO - Auditoria de Logon](#gpo---auditoria-de-logon-gpo_logonsrar)** | Backup de GPO para habilitar a auditoria necessária para o script `Buscar_Logon.ps1`. |
 | **[AlterarPerfilDeRede.ps1](#alterarperfilderedeps1)** | Visualiza e altera a categoria de perfis de rede (Pública/Privada) em uma máquina local. |
 
+### Categoria: Limpeza & Recuperação
+
+| Script | Descrição |
+| :--- | :--- |
+| **[office_removal.ps1](#office_removalps1)** | Remove todas as versões do Office e Outlook: desinstala, apaga registros, perfis, AppData e temporários, tornando o sistema "zerado" de Office (ação destrutiva e irreversível). |
+
 ---
 
 ## 📜 Detalhes dos Scripts
@@ -53,7 +59,6 @@ Gera um **relatório completo de todos os e-mails vigentes** na organização Mi
 * **Pré-requisitos**: Módulos `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `ImportExcel`. Permissões de API (`User.Read.All`, `Group.Read.All`).
 * **Como Usar**: Execute `.\Ver_Emails.ps1` e aguarde a geração do arquivo Excel.
 
-
 #### Alterar_Senhas_365.ps1
 
 Automatiza a geração e aplicação de **senhas aleatórias** para usuários de um domínio específico no Microsoft 365.
@@ -67,10 +72,9 @@ Automatiza a geração e aplicação de **senhas aleatórias** para usuários de
 
 Localiza arquivos por nome no OneDrive for Business de usuário específico ou todos os usuários de um domínio.
 
-* **Funcionalidades**: Busca interativa com dois modos (usuário único ou domínio completo), suporte a wildcards (*, ?), detecção de duplicatas, relatório CSV automático, verificação de provisionamento.Busca interativa com dois modos (usuário único ou domínio completo), suporte a wildcards (*, ?), detecção de duplicatas, relatório CSV automático, verificação de provisionamento.
+* **Funcionalidades**: Busca interativa, dois modos (usuário único ou domínio completo), suporte a wildcards, detecção de duplicatas, relatório CSV automático.
 * **Pré-requisitos**: Módulo Microsoft.Graph (Authentication, Users, Files), permissões de API (User.Read.All, Files.Read.All, Directory.Read.All), privilégios administrativos.
-* **Como Usar**: Execute .\Procura_Arquivos.ps1, escolha modo 1 (usuário específico) ou modo 2 (todos do domínio), digite domínio/email + filtro de busca. Modo 2 gera CSV automaticamente.
-
+* **Como Usar**: Execute .\Procura_Arquivos.ps1, escolha modo desejado e siga instruções.
 
 #### Remover_Email.ps1
 
@@ -85,61 +89,44 @@ Realiza a remoção em massa de e-mails específicos de **todas as caixas de cor
 
 Automatiza a configuração de um e-mail **"catch-all"** (coletor geral) para um domínio específico, redirecionando e-mails enviados para endereços inexistentes para uma única caixa de correio.
 
-* **Funcionalidades**: Instalação automática do módulo `ExchangeOnlineManagement`, validação de domínio, altera o tipo do domínio para `InternalRelay`, cria regra de transporte com prioridade dinâmica para evitar conflitos.
+* **Funcionalidades**: Instalação automática do módulo `ExchangeOnlineManagement`, validação de domínio, altera o tipo do domínio para `InternalRelay`, cria regra de transporte com prioridade dinâmica.
 * **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, permissões de Administrador do Exchange.
-* **Como Usar**: Execute `.\Configura-CatchAll.ps1` e forneça o e-mail do administrador, o domínio alvo e o e-mail coletor.
-    > ⚠️ **Aviso Importante**: A propagação da regra de transporte pode levar até uma hora para ser concluída em todo o ambiente.
+* **Como Usar**: Execute `.\Configura-CatchAll.ps1` e forneça os dados solicitados.
+    > ⚠️ **Aviso Importante**: Propagação da regra pode levar até uma hora.
 
 #### UsarAlias.ps1
 
-Habilita a funcionalidade **"Enviar como Alias"** para toda a organização e entra em um menu interativo para visualizar e adicionar novos aliases a um usuário específico.
+Habilita a funcionalidade **"Enviar como Alias"** na organização e entra em menu interativo para adicionar/gerenciar aliases de usuários.
 
-* **Funcionalidades**: Ativação automática do recurso `SendFromAliasEnabled` no tenant, menu interativo para listar e adicionar múltiplos aliases a um usuário, instruções de uso no final.
-* **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, permissões de Administrador do Exchange.
-* **Como Usar**: Execute `.\UsarAlias.ps1`, autentique-se e siga as instruções para selecionar o usuário e gerenciar seus aliases.
-    > ⚠️ **Aviso Importante**: Se a funcionalidade for ativada pelo script, pode levar algumas horas para propagar.
+* **Funcionalidades**: Ativação automática de SendFromAliasEnabled no tenant, lista e adição via menu, instruções ao final.
+* **Pré-requisitos**: Módulo `ExchangeOnlineManagement`, privilégios administrativos Exchange.
+* **Como Usar**: Execute, autentique-se e siga o menu interativo.
+    > ⚠️ **Aviso**: A propagação do recurso pode levar algumas horas.
 
 ---
 
-### Active Directory & Windows Local
+### Limpeza & Recuperação
 
-#### Relacao_Confianca.ps1
+#### office_removal.ps1
 
-Verifica o status da **relação de confiança (trust relationship)** de um ou todos os computadores ativos no Active Directory local e gera um relatório em Excel.
+Remove **todas as versões do Microsoft Office e Outlook, perfis, registros, cache e arquivos temporários** do Windows, deixando o sistema pronto para instalação limpa ou repasse. A ação é radical e irreversível.
 
-* **Funcionalidades**: Diagnóstico preciso, relatório em Excel, cálculo de inatividade, não requer WinRM.
-* **Pré-requisitos**: Ferramentas RSAT, módulos `ActiveDirectory` e `ImportExcel`.
-* **Como Usar**: Execute `.\Relacao_Confianca.ps1` como Administrador em um computador do domínio.
+* **Funcionalidades**: 
+  - Encerra processos do Office e Outlook.
+  - Desinstala qualquer versão detectada.
+  - Remove registros em HKLM e HKCU.
+  - Exclui pastas em Program Files, AppData e cache.
+  - Apaga todos os perfis e arquivos locais do Outlook/Office.
+* **Pré-requisitos**: Execução como Administrador, PowerShell 5.1+.
+* **Como Usar**:  
+  1. Faça backup dos dados importantes (OST/PST/OneNote).
+  2. Execute como Administrador:  
+     `PowerShell -ExecutionPolicy Bypass -File .\office_removal.ps1`
+  3. Aguarde e reinicie o computador.
+* **Avisos**: Todos os dados locais e perfis do Office serão perdidos. Não há backup por padrão.
+* **Indicações**: Limpeza total antes de migração, troubleshooting crítico, devolução de máquina, reinstalação clean.
 
-#### Procura_Eventos.ps1
-
-Busca múltiplos **Event IDs** nos logs de eventos do Windows em um intervalo de datas e exporta os resultados para Excel.
-
-* **Funcionalidades**: Busca por múltiplos IDs, filtro por data, varredura completa dos logs, exportação para Excel com abas separadas.
-* **Pré-requisitos**: Execução como Administrador, módulo `ImportExcel`.
-* **Como Usar**: Execute `.\Procura_Eventos.ps1` como Administrador e siga as instruções.
-
-#### Buscar_Logon.ps1
-
-Realiza uma busca forense por **eventos de logon (ID 4624)** em um ou todos os computadores do domínio, focando em atividades humanas diretas.
-
-* **Funcionalidades**: Escopo flexível, foco em logons relevantes (tipos 2, 7, 10, 11), execução em paralelo, relatório em Excel.
-* **Pré-requisitos**: GPO de Auditoria de Logon habilitada (inclusa no repositório), módulos `ActiveDirectory` e `ImportExcel`.
-* **Como Usar**: Importe e vincule a GPO `gpo_logons.rar`, aguarde a replicação e execute `.\Buscar_Logon.ps1`.
-
-#### GPO - Auditoria de Logon (gpo_logons.rar)
-
-Backup de uma **Group Policy Object (GPO)** pré-configurada para habilitar as políticas de auditoria e o WinRM, necessários para o funcionamento do script `Buscar_Logon.ps1`.
-
-* **Como Usar**: No GPMC, crie uma GPO vazia, clique com o botão direito, selecione **"Importar Configurações..."** e aponte para a pasta descompactada. Vincule a GPO na OU desejada.
-
-#### AlterarPerfilDeRede.ps1
-
-Permite visualizar e alterar a categoria de perfis de rede (Pública, Privada) em uma máquina Windows local.
-
-* **Funcionalidades**: Listagem clara, alteração interativa, verificação de privilégios.
-* **Pré-requisitos**: Execução como Administrador na máquina local.
-* **Como Usar**: Clique com o botão direito no arquivo e selecione "Executar com o PowerShell".
+---
 
 ### 👨‍💻 Autor
 
