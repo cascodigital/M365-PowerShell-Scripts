@@ -53,7 +53,7 @@
     - Processos: Aplicativos Office encerrados
 
 .NOTES
-    Autor         : Perplexity AI
+    Autor         : André Kittler
     Versao        : 1.0
     Compatibilidade: PowerShell 5.1+, Windows 10/11
     
