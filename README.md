@@ -1,86 +1,86 @@
 # M365-PowerShell-Scripts
 
-Colecao de scripts PowerShell para administracao Microsoft 365, Exchange Online, OneDrive, Active Directory e analise local de Windows. Projetado para uso profissional — scripts sao interativos e exigem permissoes apropriadas.
+Coleção de scripts PowerShell para administração Microsoft 365, Exchange Online, OneDrive, Active Directory e análise local de Windows. Projetado para uso profissional — scripts são interativos e exigem permissões apropriadas.
 
 ---
 
-## 📋 Conteudo (scripts) — descricoes detalhadas
+## 📋 Conteúdo (scripts) — descrições detalhadas
 
 ### **Ver_MfaComplianceReport.ps1**
-Gera relatorio de conformidade MFA focado em "usuarios reais" (filtra contas de servico, aplicacoes e contas excluidas). Entrada: periodo/opcoes de filtragem. Saida: CSV/Excel com estado MFA, metodos registrados e recomendacoes.  
-🔑 **Requer** permissoes de leitura em Azure AD/Graph.
+Gera relatório de conformidade MFA focado em "usuários reais" (filtra contas de serviço, aplicações e contas excluídas). Entrada: período/opções de filtragem. Saída: CSV/Excel com estado MFA, métodos registrados e recomendações.  
+🔑 **Requer** permissões de leitura em Azure AD/Graph.
 
 ### **Ver_Emails.ps1**
-Varre o tenant para compilar todos os enderecos associados (usuarios, grupos, caixas compartilhadas e aliases). Produz lista deduplicada para auditoria ou migracao. Util para identificar destinatarios ativos e aliases ocultos.  
-🔑 **Requer** permissoes de Exchange/Graph.
+Varre o tenant para compilar todos os endereços associados (usuários, grupos, caixas compartilhadas e aliases). Produz lista deduplicada para auditoria ou migração. Útil para identificar destinatários ativos e aliases ocultos.  
+🔑 **Requer** permissões de Exchange/Graph.
 
 ### **Alterar_Senhas_365.ps1**
-Gera senhas seguras em massa e aplica a usuarios de um dominio/OU selecionado. Gera CSV com usuario → nova senha (texto claro) para distribuicao controlada.  
-⚠️ **Atencao:** operacao disruptiva; usar conta com permissao de alteracao de senha em massa.
+Gera senhas seguras em massa e aplica a usuários de um domínio/OU selecionado. Gera CSV com usuário → nova senha (texto claro) para distribuição controlada.  
+⚠️ **Atenção:** operação disruptiva; usar conta com permissão de alteração de senha em massa.
 
 ### **Procura_Arquivos.ps1**
-Busca arquivos em OneDrive para usuario especifico ou para todos usuarios do tenant, por nome, extensao ou conteudo (quando disponivel). Exporta resultados para CSV/Excel com caminho, proprietario e informacoes de compartilhamento.  
+Busca arquivos em OneDrive para usuário específico ou para todos usuários do tenant, por nome, extensão ou conteúdo (quando disponível). Exporta resultados para CSV/Excel com caminho, proprietário e informações de compartilhamento.  
 🔑 **Requer** Microsoft Graph/OneDrive scopes.
 
 ### **Procura_Sharepoint.ps1**
-Busca recursiva em sites SharePoint (sites, bibliotecas, pastas) via Microsoft Graph. Filtragem por padrao, tipo de arquivo, data e proprietario. Gera relatorio com URLs diretas e metadados.  
-🔑 **Necessita** permissoes de leitura em SharePoint/Graph.
+Busca recursiva em sites SharePoint (sites, bibliotecas, pastas) via Microsoft Graph. Filtragem por padrão, tipo de arquivo, data e proprietário. Gera relatório com URLs diretas e metadados.  
+🔑 **Necessita** permissões de leitura em SharePoint/Graph.
 
 ### **Procura_Eventos.ps1**
-Analisa logs locais do Windows buscando multiplos Event IDs (ex.: autenticacao, falhas, remocoes). Agrega e exporta para Excel com contagens, gravidade e eventos relevantes.  
-💻 **Executar** como Administrador nas maquinas alvo ou via remoting.
+Analisa logs locais do Windows buscando múltiplos Event IDs (ex.: autenticação, falhas, remoções). Agrega e exporta para Excel com contagens, gravidade e eventos relevantes.  
+💻 **Executar** como Administrador nas máquinas alvo ou via remoting.
 
 ### **Buscar_Logon.ps1**
-Coleta eventos 4624 (logon) em computadores do dominio para analise forense de acesso. Suporta varredura em multiplos hosts, agrega por usuario, origem e hora. Usa o arquivo `gpo_logons.rar` para instrucoes/objeto GPO que habilita auditoria, se necessario.  
-🔑 **Requer** privilegios de leitura de eventos remotos e permissao AD.
+Coleta eventos 4624 (logon) em computadores do domínio para análise forense de acesso. Suporta varredura em múltiplos hosts, agrega por usuário, origem e hora. Usa o arquivo `gpo_logons.rar` para instruções/objeto GPO que habilita auditoria, se necessário.  
+🔑 **Requer** privilégios de leitura de eventos remotos e permissão AD.
 
 ### **Remover_Email.ps1**
-Implementa busca e purge (Search & Purge) para remover mensagens especificas por remetente, assunto ou conteudo. Suporte a escopos amplos (caixas, grupos).  
-🔥 **Operacao destrutiva** — testar em ambiente controlado e ter backups/auditoria.  
-🔑 **Requer** permissoes de compliance/exchange.
+Implementa busca e purge (Search & Purge) para remover mensagens específicas por remetente, assunto ou conteúdo. Suporte a escopos amplos (caixas, grupos).  
+🔥 **Operação destrutiva** — testar em ambiente controlado e ter backups/auditoria.  
+🔑 **Requer** permissões de compliance/exchange.
 
 ### **Configura-CatchAll.ps1**
-Cria um grupo dinamico e adiciona regra de transporte no Exchange Online para capturar emails nao entregues (catch‑all). Inclui validacoes e instrucoes de rollback.  
-🔑 **Necessita** permissoes de administrador Exchange.
+Cria um grupo dinâmico e adiciona regra de transporte no Exchange Online para capturar emails não entregues (catch‑all). Inclui validações e instruções de rollback.  
+🔑 **Necessita** permissões de administrador Exchange.
 
 ### **UsarAlias.ps1**
-Gerencia aliases de usuarios e habilita SendFromAliasEnabled no tenant (quando suportado). Permite mapear aliases existentes, adicionar/remover aliases em lote e validar envio a partir de aliases.  
-🔑 **Requer** permissoes de gestao de usuarios/Exchange.
+Gerencia aliases de usuários e habilita SendFromAliasEnabled no tenant (quando suportado). Permite mapear aliases existentes, adicionar/remover aliases em lote e validar envio a partir de aliases.  
+🔑 **Requer** permissões de gestão de usuários/Exchange.
 
 ### **Relacao_Confianca.ps1**
-Audita relacoes de confianca entre estacoes/servidores e o Active Directory, identifica maquinas com trust problems (timing, senha de maquina, SID). Gera relatorio com recomendacoes de correcao.  
-🔑 **Executar** com conta de dominio com privilegios de leitura de AD.
+Audita relações de confiança entre estações/servidores e o Active Directory, identifica máquinas com trust problems (timing, senha de máquina, SID). Gera relatório com recomendações de correção.  
+🔑 **Executar** com conta de domínio com privilégios de leitura de AD.
 
 ### **monitor-ping.ps1**
-Monitor simples de latencia (ICMP) para uma lista de hosts; grava resultados em CSV em tempo real e plota resumo. Util para monitoramento rapido de disponibilidade de recursos de rede.  
-💻 **Executar** com privilegios suficientes para ICMP e em rede que permita ping.
+Monitor simples de latência (ICMP) para uma lista de hosts; grava resultados em CSV em tempo real e plota resumo. Útil para monitoramento rápido de disponibilidade de recursos de rede.  
+💻 **Executar** com privilégios suficientes para ICMP e em rede que permita ping.
 
 ### **office_removal.ps1**
-Remocao agressiva de instalacoes do Microsoft Office de maquinas locais (scripts de desinstalacao e limpeza).  
-🔥 **Operacao destrutiva** — testar em maquinas de laboratorio e avisar usuarios.  
-💻 **Requer** execucao como Administrador local e, para remocao em escala, privilegios de dominio.
+Remoção agressiva de instalações do Microsoft Office de máquinas locais (scripts de desinstalação e limpeza).  
+🔥 **Operação destrutiva** — testar em máquinas de laboratório e avisar usuários.  
+💻 **Requer** execução como Administrador local e, para remoção em escala, privilégios de domínio.
 
 ### 📦 Arquivo adicional
-- **gpo_logons.rar** — backup/objeto GPO com configuracao de auditoria de logons. Usado por `Buscar_Logon.ps1` quando for necessario habilitar auditoria em endpoints.
+- **gpo_logons.rar** — backup/objeto GPO com configuração de auditoria de logons. Usado por `Buscar_Logon.ps1` quando for necessário habilitar auditoria em endpoints.
 
 ---
 
-## 🛠️ Requisitos minimos
+## 🛠️ Requisitos mínimos
 
-- **PowerShell 5.1+** (recomenda-se PowerShell 7+ para melhor compatibilidade com modulos)
-- **Modulos** (instalaveis quando solicitados pelos scripts):
+- **PowerShell 5.1+** (recomenda-se PowerShell 7+ para melhor compatibilidade com módulos)
+- **Módulos** (instaláveis quando solicitados pelos scripts):
   - `Microsoft.Graph`
   - `ExchangeOnlineManagement`
   - `ImportExcel`
   - `ActiveDirectory`
-- **Contas com permissoes adequadas** (Global/Admin/Exchange/Password admin, dependendo do script)
+- **Contas com permissões adequadas** (Global/Admin/Exchange/Password admin, dependendo do script)
 - **Executar como Administrador** para tarefas locais/AD/Office removal
 
 ---
 
-## 🚀 Uso rapido
+## 🚀 Uso rápido
 
-1. Navegar ate a pasta dos scripts:
+1. Navegar até a pasta dos scripts:
    ```powershell
    Set-Location '<caminho>/m365-powershell-scripts/scripts'
    ```
@@ -90,19 +90,19 @@ Remocao agressiva de instalacoes do Microsoft Office de maquinas locais (scripts
    PowerShell -ExecutionPolicy Bypass -File .\NomeDoScript.ps1
    ```
 
-3. Seguir prompts interativos. **Leia avisos antes de confirmar acoes.**
+3. Seguir prompts interativos. **Leia avisos antes de confirmar ações.**
 
 ---
 
-## ⚠️ Avisos de seguranca e uso
+## ⚠️ Avisos de segurança e uso
 
-- **Alterar senhas em massa** gera CSV com senhas em texto claro — armazene com seguranca e apague apos uso
-- **Remocao de emails** (`Remover_Email.ps1`) e **remocao do Office** (`office_removal.ps1`) sao operacoes com impacto amplo e irreversivel; use com extrema cautela
-- Scripts que usam Graph/Exchange pedem consentimento/escopos. **Confirme permissoes antes de executar em producao**
+- **Alterar senhas em massa** gera CSV com senhas em texto claro — armazene com segurança e apague após uso
+- **Remoção de emails** (`Remover_Email.ps1`) e **remoção do Office** (`office_removal.ps1`) são operações com impacto amplo e irreversível; use com extrema cautela
+- Scripts que usam Graph/Exchange pedem consentimento/escopos. **Confirme permissões antes de executar em produção**
 
 ---
 
-## 📂 Estrutura do repositorio
+## 📂 Estrutura do repositório
 
 ```
 /scripts          — scripts PowerShell (principal)
@@ -112,13 +112,13 @@ LICENSE           — MIT
 
 ---
 
-## 🤝 Contribuicoes e contato
+## 🤝 Contribuições e contato
 
-Pull requests e issues sao bem-vindos.  
+Pull requests e issues são bem-vindos.  
 **Autor:** Andre Kittler
 
 ---
 
-## 📄 Licenca
+## 📄 Licença
 
 MIT License
