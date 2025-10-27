@@ -22,10 +22,6 @@ Gera senhas seguras em massa e aplica a usuários de um domínio/OU selecionado.
 Busca arquivos em OneDrive para usuário específico ou para todos usuários do tenant, por nome, extensão ou conteúdo (quando disponível). Exporta resultados para CSV/Excel com caminho, proprietário e informações de compartilhamento.  
 🔑 **Requer** Microsoft Graph/OneDrive scopes.
 
-### **Procura_Sharepoint.ps1**
-Busca recursiva em sites SharePoint (sites, bibliotecas, pastas) via Microsoft Graph. Filtragem por padrão, tipo de arquivo, data e proprietário. Gera relatório com URLs diretas e metadados.  
-🔑 **Necessita** permissões de leitura em SharePoint/Graph.
-
 ### **Procura_Eventos.ps1**
 Analisa logs locais do Windows buscando múltiplos Event IDs (ex.: autenticação, falhas, remoções). Agrega e exporta para Excel com contagens, gravidade e eventos relevantes.  
 💻 **Executar** como Administrador nas máquinas alvo ou via remoting.
