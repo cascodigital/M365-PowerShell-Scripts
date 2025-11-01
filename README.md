@@ -107,10 +107,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Falha de conexao Exchange
 Verifique MFA habilitado e use Modern Authentication
 
-## 🤝 Contribuicoes
-
-Pull requests e issues sao bem-vindos. Para mudancas importantes, abra uma issue primeiro.
-
 ## 📄 Licenca
 
 Este projeto esta licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
