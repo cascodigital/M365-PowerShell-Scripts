@@ -1,240 +1,328 @@
 <#
 .SYNOPSIS
-    Remocao automatizada de emails especificos em tenant Microsoft 365 via Security & Compliance Center
+    Remocao automatizada de emails em Microsoft 365 com verificacao e instalacao automatica de dependencias
 
 .DESCRIPTION
-    Script corporativo para remocao controlada e auditavel de emails maliciosos, spam ou conteudo
-    inadequado em escala organizacional. Utiliza Compliance Search e Purge Actions do Security &
-    Compliance Center para localizacao precisa e remocao segura com SoftDelete, mantendo emails
-    em Itens Recuperaveis para auditoria e recuperacao posterior se necessario.
+    Script corporativo autocontido - versao 3.1 com correcao de desinstalacao
     
-    Funcionalidades principais:
-    - Busca precisa baseada em remetente e assunto simultaneamente
-    - Remocao em todas as caixas postais do tenant automaticamente
-    - SoftDelete preserva emails em Itens Recuperaveis por 30 dias
-    - Nomenclatura unica com timestamp para rastreabilidade
-    - Validacao de resultados antes da execucao da remocao
-    - Confirmacao interativa para prevencao de erros operacionais
-    - Cleanup automatico de buscas vazias ou com falha
-    
-    Casos de uso tipicos:
-    - Remocao de emails de phishing em surtos de seguranca
-    - Eliminacao de spam massivo com bypass de filtros
-    - Remocao de conteudo inadequado ou vazamentos de dados
-    - Limpeza de emails com malware ou anexos perigosos
-    - Acao de resposta a incidentes de seguranca cibernetica
-
-.PARAMETER None
-    Script interativo - solicita remetente e assunto durante execucao
-
-.EXAMPLE
-    .\Remove-MailboxEmails.ps1
-    # Remetente: phishing@malicious-site.com
-    # Assunto: Urgent Action Required - Verify Account
-    # Resultado: Remove emails de phishing de todas as caixas do tenant
-
-.EXAMPLE
-    .\Remove-MailboxEmails.ps1
-    # Remetente: noreply@spam-source.net
-    # Assunto: Limited Time Offer - Click Now
-    # Resultado: Eliminacao de campanha de spam massivo
-
-.EXAMPLE
-    # Remocao de email com dados sensiveis vazados
-    .\Remove-MailboxEmails.ps1
-    # Remetente: insider@empresa.com
-    # Assunto: Confidential Customer Database Export
-    # Resultado: Remocao imediata com preservacao para investigacao forense
-
-.INPUTS
-    String - Endereco email do remetente para filtro de busca
-    String - Assunto exato do email para filtro de busca
-
-.OUTPUTS
-    - Console: Log detalhado do processo com contadores
-    - Compliance Search: Criada com nome timestamp para auditoria  
-    - Purge Action: Executada com SoftDelete em todas caixas
-    - Itens Recuperaveis: Emails preservados por 30 dias
-
 .NOTES
     Autor         : Andre Kittler
-    Versao        : 1.0
-    Compatibilidade: PowerShell 5.1+, Windows/Linux/macOS
-    
-    Requisitos obrigatorios:
-    - Conexao ativa ao Security & Compliance Center (Connect-IPPSSession)
-    - Privilegios administrativos especificos:
-      * Compliance Administrator OU
-      * Security Administrator OU
-      * Organization Management OU
-      * eDiscovery Manager com Purge permissions
-    
-    Permissoes de API necessarias:
-    - Compliance Search (criar e executar buscas)
-    - Purge Actions (remover conteudo das caixas)
-    - Exchange Online acesso total para todas mailboxes
-    
-    Processo tecnico detalhado:
-    1. New-ComplianceSearch com ExchangeLocation All
-    2. Start-ComplianceSearch com query (from: AND subject:)
-    3. Monitoramento de status ate Completed
-    4. New-ComplianceSearchAction com PurgeType SoftDelete
-    5. Cleanup automatico em caso de falha ou busca vazia
-    
-    Configuracoes de seguranca:
-    - SoftDelete: Emails movidos para Itens Recuperaveis (nao deletados permanentemente)
-    - Confirmacao obrigatoria antes da execucao
-    - Nome unico com timestamp para rastreabilidade completa
-    - Preservacao por 30 dias para auditoria e recuperacao
-    
-    Tipos de Purge disponiveis:
-    - SoftDelete: Move para Itens Recuperaveis (recomendado)
-    - HardDelete: Remove permanentemente (apenas casos extremos)
-    
-    Recuperacao de emails removidos:
-    - Acessivel via Outlook > Itens Recuperaveis
-    - Recuperacao por administrador usando mesmo nome da busca
-    - Prazo: 30 dias apos SoftDelete (14 dias padrao + 16 extensao)
-    
-    Limitacoes e consideracoes:
-    - Query exata: remetente E assunto devem coincidir
-    - Propagacao pode levar alguns minutos em tenants grandes
-    - Nao remove emails ja em Itens Recuperaveis do usuario
-    - Log de auditoria mantem registro da acao por compliance
-
-.LINK
-    https://docs.microsoft.com/en-us/microsoft-365/compliance/search-for-and-delete-messages-in-your-organization
-
-.LINK
-    https://docs.microsoft.com/en-us/powershell/module/exchange/new-compliancesearch
+    Versao        : 3.1 (Corrigido erro AllowPrerelease)
+    Data          : 2025-11-23
 #>
 
+function Write-ColorMessage {
+    param(
+        [string]$Message,
+        [string]$Type = "Info"
+    )
+    
+    switch ($Type) {
+        "Success" { Write-Host "✓ $Message" -ForegroundColor Green }
+        "Error" { Write-Host "✗ $Message" -ForegroundColor Red }
+        "Warning" { Write-Host "⚠ $Message" -ForegroundColor Yellow }
+        "Info" { Write-Host "ℹ $Message" -ForegroundColor Cyan }
+        "Progress" { Write-Host "→ $Message" -ForegroundColor White }
+        default { Write-Host $Message }
+    }
+}
 
-# --- SCRIPT COMPLETO DE REMOÇÃO DE E-MAILS ---
+function Test-ModuleVersion {
+    $installedModule = Get-InstalledModule -Name ExchangeOnlineManagement -AllVersions -ErrorAction SilentlyContinue | 
+        Sort-Object Version -Descending | 
+        Select-Object -First 1
+    
+    if (!$installedModule) {
+        return $null
+    }
+    
+    return $installedModule.Version
+}
 
-Write-Host "=== REMOÇÃO DE E-MAILS - Microsoft 365 ===" -ForegroundColor Cyan
-Write-Host ""
+function Install-RequiredModule {
+    Write-ColorMessage "=== VERIFICAÇÃO DE DEPENDÊNCIAS ===" -Type "Info"
+    Write-Host ""
+    
+    $currentVersion = Test-ModuleVersion
+    
+    if ($currentVersion) {
+        Write-ColorMessage "Versão instalada: $currentVersion" -Type "Progress"
+    } else {
+        Write-ColorMessage "ExchangeOnlineManagement não encontrado" -Type "Warning"
+    }
+    
+    # Verificar se precisa atualizar
+    $needsUpdate = $false
+    
+    if (!$currentVersion) {
+        $needsUpdate = $true
+        Write-ColorMessage "Módulo não instalado - instalação necessária" -Type "Warning"
+    } elseif ($currentVersion -lt [version]"3.9.1") {
+        $needsUpdate = $true
+        Write-ColorMessage "Versão antiga detectada - atualização necessária (mínimo: 3.9.1-Preview1)" -Type "Warning"
+    }
+    
+    if ($needsUpdate) {
+        Write-Host ""
+        Write-ColorMessage "Para executar este script é necessário ExchangeOnlineManagement 3.9.1-Preview1+" -Type "Info"
+        $confirm = Read-Host "Deseja instalar/atualizar automaticamente? (S/N)"
+        
+        if ($confirm -ne 'S' -and $confirm -ne 's') {
+            Write-ColorMessage "Operação cancelada pelo usuário" -Type "Error"
+            Write-Host ""
+            Write-ColorMessage "Para instalar manualmente execute:" -Type "Info"
+            Write-Host "Install-Module ExchangeOnlineManagement -AllowPrerelease -Force" -ForegroundColor Gray
+            exit
+        }
+        
+        Write-Host ""
+        Write-ColorMessage "Instalando ExchangeOnlineManagement Preview..." -Type "Progress"
+        
+        try {
+            # Remover módulo da sessão atual
+            if (Get-Module ExchangeOnlineManagement) {
+                Write-ColorMessage "Removendo módulo da sessão..." -Type "Progress"
+                Remove-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+            }
+            
+            # Desinstalar versões antigas (corrigido)
+            if ($currentVersion) {
+                Write-ColorMessage "Desinstalando versões antigas..." -Type "Progress"
+                
+                $allVersions = Get-InstalledModule ExchangeOnlineManagement -AllVersions -ErrorAction SilentlyContinue
+                foreach ($version in $allVersions) {
+                    try {
+                        Write-Host "  Removendo versão $($version.Version)..." -ForegroundColor Gray
+                        Uninstall-Module -Name ExchangeOnlineManagement -RequiredVersion $version.Version -Force -ErrorAction Stop
+                    } catch {
+                        Write-ColorMessage "  Aviso: Não foi possível remover versão $($version.Version)" -Type "Warning"
+                    }
+                }
+            }
+            
+            # Aguardar um momento
+            Start-Sleep -Seconds 2
+            
+            # Instalar versão Preview
+            Write-ColorMessage "Instalando versão Preview mais recente..." -Type "Progress"
+            Install-Module -Name ExchangeOnlineManagement -AllowPrerelease -Force -Scope CurrentUser -SkipPublisherCheck -ErrorAction Stop
+            
+            # Importar módulo
+            Import-Module ExchangeOnlineManagement -Force -ErrorAction Stop
+            
+            $newVersion = (Get-InstalledModule ExchangeOnlineManagement -AllVersions | Sort-Object Version -Descending | Select-Object -First 1).Version
+            Write-ColorMessage "Instalado com sucesso: versão $newVersion" -Type "Success"
+            
+            Write-Host ""
+            Write-ColorMessage "IMPORTANTE: Reinicie o PowerShell para garantir que a nova versão seja carregada" -Type "Warning"
+            $restart = Read-Host "Deseja sair agora e reiniciar o PowerShell? (S/N)"
+            
+            if ($restart -eq 'S' -or $restart -eq 's') {
+                Write-ColorMessage "Feche esta janela e abra um novo PowerShell, depois execute o script novamente" -Type "Info"
+                exit
+            }
+            
+        } catch {
+            Write-ColorMessage "Erro ao instalar: $($_.Exception.Message)" -Type "Error"
+            Write-Host ""
+            Write-ColorMessage "SOLUÇÃO MANUAL:" -Type "Warning"
+            Write-Host "1. Feche TODAS as janelas PowerShell abertas" -ForegroundColor Gray
+            Write-Host "2. Abra nova janela PowerShell como Administrador" -ForegroundColor Gray
+            Write-Host "3. Execute os seguintes comandos:" -ForegroundColor Gray
+            Write-Host ""
+            Write-Host "   # Remover versões antigas" -ForegroundColor Yellow
+            Write-Host "   Get-InstalledModule ExchangeOnlineManagement -AllVersions | Uninstall-Module -Force" -ForegroundColor White
+            Write-Host ""
+            Write-Host "   # Instalar Preview" -ForegroundColor Yellow
+            Write-Host "   Install-Module ExchangeOnlineManagement -AllowPrerelease -Force -SkipPublisherCheck" -ForegroundColor White
+            Write-Host ""
+            Write-Host "4. Feche e abra novo PowerShell" -ForegroundColor Gray
+            Write-Host "5. Execute este script novamente" -ForegroundColor Gray
+            Write-Host ""
+            exit
+        }
+    } else {
+        Write-ColorMessage "Versão adequada já instalada" -Type "Success"
+        Import-Module ExchangeOnlineManagement -Force
+    }
+    
+    Write-Host ""
+}
 
-# Verifica e conecta ao Security & Compliance Center
-Write-Host "Verificando conexão com Security & Compliance Center..." -ForegroundColor White
-try {
-    Get-ComplianceSearch -ErrorAction Stop | Out-Null
-    Write-Host "✓ Já conectado!" -ForegroundColor Green
-} catch {
-    Write-Host "Conectando ao Security & Compliance Center..." -ForegroundColor Yellow
+function Connect-M365Services {
+    Write-ColorMessage "=== CONEXÃO AOS SERVIÇOS ===" -Type "Info"
+    Write-Host ""
+    
+    # Verificar se Connect-IPPSSession suporta -EnableSearchOnlySession
+    $supportsSearchOnly = $false
     try {
-        Connect-IPPSSession -ErrorAction Stop
-        Write-Host "✓ Conectado com sucesso!" -ForegroundColor Green
+        $params = (Get-Command Connect-IPPSSession -ErrorAction Stop).Parameters
+        $supportsSearchOnly = $params.ContainsKey('EnableSearchOnlySession')
     } catch {
-        Write-Host "Erro ao conectar: $($_.Exception.Message)" -ForegroundColor Red
+        Write-ColorMessage "Erro ao verificar comando Connect-IPPSSession" -Type "Error"
+        Write-ColorMessage "Certifique-se de ter reiniciado o PowerShell após a instalação" -Type "Warning"
         exit
+    }
+    
+    if (!$supportsSearchOnly) {
+        Write-ColorMessage "ERRO: Parâmetro -EnableSearchOnlySession não disponível" -Type "Error"
+        Write-ColorMessage "Isso pode significar que:" -Type "Warning"
+        Write-Host "  1. A versão Preview não foi instalada corretamente" -ForegroundColor Gray
+        Write-Host "  2. O PowerShell não foi reiniciado após a instalação" -ForegroundColor Gray
+        Write-Host "  3. Uma versão antiga ainda está em cache" -ForegroundColor Gray
+        Write-Host ""
+        Write-ColorMessage "SOLUÇÃO: Feche TODAS janelas PowerShell, abra nova janela e execute o script novamente" -Type "Info"
+        exit
+    }
+    
+    Write-ColorMessage "Suporte a -EnableSearchOnlySession: OK" -Type "Success"
+    Write-Host ""
+    
+    # Conectar ao Compliance
+    Write-ColorMessage "Conectando ao Security & Compliance Center..." -Type "Progress"
+    try {
+        Get-ComplianceSearch -ResultSize 1 -ErrorAction Stop | Out-Null
+        Write-ColorMessage "Já conectado!" -Type "Success"
+    } catch {
+        try {
+            Connect-IPPSSession -EnableSearchOnlySession -ShowBanner:$false -ErrorAction Stop
+            Write-ColorMessage "Conectado com sucesso!" -Type "Success"
+        } catch {
+            Write-ColorMessage "Erro ao conectar: $($_.Exception.Message)" -Type "Error"
+            exit
+        }
+    }
+    
+    Write-Host ""
+}
+
+function Remove-EmailBySearch {
+    Write-ColorMessage "=== REMOÇÃO DE E-MAILS ===" -Type "Info"
+    Write-Host ""
+    
+    # Solicitar dados
+    $sender = Read-Host "Digite o endereço do remetente"
+    if ([string]::IsNullOrWhiteSpace($sender)) {
+        Write-ColorMessage "Remetente não pode estar vazio!" -Type "Error"
+        exit
+    }
+    
+    $subject = Read-Host "Digite o assunto do e-mail"
+    if ([string]::IsNullOrWhiteSpace($subject)) {
+        Write-ColorMessage "Assunto não pode estar vazio!" -Type "Error"
+        exit
+    }
+    
+    # Gerar nome único
+    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+    $searchName = "RemocaoEmail_$timestamp"
+    $searchQuery = "(from:$sender) AND (subject:'$subject')"
+    
+    Write-Host ""
+    Write-ColorMessage "RESUMO DA OPERAÇÃO:" -Type "Info"
+    Write-Host "  Remetente: $sender"
+    Write-Host "  Assunto: $subject"
+    Write-Host "  Query: $searchQuery"
+    Write-Host "  Busca: $searchName"
+    Write-Host ""
+    
+    $confirm = Read-Host "Prosseguir com a remoção? (S/N)"
+    if ($confirm -ne 'S' -and $confirm -ne 's') {
+        Write-ColorMessage "Operação cancelada" -Type "Warning"
+        exit
+    }
+    
+    Write-Host ""
+    Write-ColorMessage "=== PROCESSANDO ===" -Type "Info"
+    
+    try {
+        # 1. Criar busca
+        Write-ColorMessage "1/5 Criando busca de conformidade..." -Type "Progress"
+        New-ComplianceSearch -Name $searchName -ExchangeLocation All -ContentMatchQuery $searchQuery -ErrorAction Stop | Out-Null
+        Write-ColorMessage "Busca criada" -Type "Success"
+        
+        # 2. Iniciar busca
+        Write-ColorMessage "2/5 Iniciando busca..." -Type "Progress"
+        Start-ComplianceSearch -Identity $searchName -ErrorAction Stop
+        Write-ColorMessage "Busca iniciada" -Type "Success"
+        
+        # 3. Aguardar conclusão
+        Write-ColorMessage "3/5 Aguardando conclusão da busca..." -Type "Progress"
+        $attempts = 0
+        do {
+            Start-Sleep -Seconds 10
+            $searchStatus = Get-ComplianceSearch -Identity $searchName
+            $attempts++
+            Write-Host "    Status: $($searchStatus.Status) (tentativa $attempts)" -ForegroundColor Gray
+            
+            if ($searchStatus.Status -eq 'Failed') {
+                throw "Busca falhou"
+            }
+        } while ($searchStatus.Status -ne 'Completed' -and $attempts -lt 60)
+        
+        if ($searchStatus.Status -ne 'Completed') {
+            throw "Timeout: busca não completou em 10 minutos"
+        }
+        
+        Write-ColorMessage "Busca concluída" -Type "Success"
+        
+        # 4. Verificar resultados
+        $itemCount = $searchStatus.Items
+        Write-ColorMessage "4/5 Itens encontrados: $itemCount" -Type "Info"
+        
+        if ($itemCount -eq 0) {
+            Write-ColorMessage "Nenhum e-mail encontrado com os critérios especificados" -Type "Warning"
+            Remove-ComplianceSearch -Identity $searchName -Confirm:$false
+            exit
+        }
+        
+        # 5. Executar remoção
+        Write-ColorMessage "5/5 Executando remoção (SoftDelete)..." -Type "Progress"
+        New-ComplianceSearchAction -SearchName $searchName -Purge -PurgeType SoftDelete -Confirm:$false -ErrorAction Stop | Out-Null
+        
+        Write-Host ""
+        Write-ColorMessage "=== OPERAÇÃO CONCLUÍDA ===" -Type "Success"
+        Write-Host ""
+        Write-ColorMessage "$itemCount e-mail(s) removido(s) com sucesso" -Type "Success"
+        Write-ColorMessage "E-mails movidos para Itens Recuperáveis (retenção: 30 dias)" -Type "Info"
+        Write-ColorMessage "Nome da busca: $searchName" -Type "Info"
+        
+    } catch {
+        Write-Host ""
+        Write-ColorMessage "ERRO: $($_.Exception.Message)" -Type "Error"
+        
+        # Cleanup
+        try {
+            if (Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue) {
+                Remove-ComplianceSearch -Identity $searchName -Confirm:$false -ErrorAction SilentlyContinue
+                Write-ColorMessage "Busca de teste removida" -Type "Info"
+            }
+        } catch {}
     }
 }
 
+# ===== EXECUÇÃO PRINCIPAL =====
+Clear-Host
 Write-Host ""
-
-# Solicita informações do usuário
-$sender = Read-Host "Digite o endereço do remetente"
-if ([string]::IsNullOrWhiteSpace($sender)) {
-    Write-Host "Erro: Remetente não pode estar vazio!" -ForegroundColor Red
-    exit
-}
-
-$subject = Read-Host "Digite o assunto do e-mail"
-if ([string]::IsNullOrWhiteSpace($subject)) {
-    Write-Host "Erro: Assunto não pode estar vazio!" -ForegroundColor Red
-    exit
-}
-
-# Gera nome único para a busca usando timestamp
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$searchName = "RemocaoEmail_$timestamp"
-
-# Monta a query de busca
-$searchQuery = "(from:$sender) AND (subject:'$subject')"
-
+Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║          REMOÇÃO DE E-MAILS - MICROSOFT 365                  ║" -ForegroundColor Cyan
+Write-Host "║          Script com Auto-Configuração v3.1                   ║" -ForegroundColor Cyan
+Write-Host "╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "=== RESUMO DA OPERAÇÃO ===" -ForegroundColor Yellow
-Write-Host "Remetente: $sender"
-Write-Host "Assunto: $subject"
-Write-Host "Query: $searchQuery"
-Write-Host "Nome da busca: $searchName"
-Write-Host ""
-
-# Confirmação final
-$confirmacao = Read-Host "Deseja prosseguir com a remoção? (S/N)"
-if ($confirmacao -ne 'S' -and $confirmacao -ne 's') {
-    Write-Host "Operação cancelada pelo usuário." -ForegroundColor Yellow
-    exit
-}
-
-Write-Host ""
-Write-Host "=== INICIANDO PROCESSO DE REMOÇÃO ===" -ForegroundColor Green
 
 try {
-    # Cria e inicia a busca
-    Write-Host "1. Criando busca de conformidade..." -ForegroundColor White
-    New-ComplianceSearch -Name $searchName -ExchangeLocation All -ContentMatchQuery $searchQuery -ErrorAction Stop
+    # Etapa 1: Verificar/Instalar módulo
+    Install-RequiredModule
     
-    Write-Host "2. Iniciando busca..." -ForegroundColor White
-    Start-ComplianceSearch -Identity $searchName -ErrorAction Stop
-
-    # Aguarda conclusão da busca
-    Write-Host "3. Aguardando conclusão da busca..." -ForegroundColor White
-    $contador = 0
-    do {
-        $status = (Get-ComplianceSearch -Identity $searchName).Status
-        $contador++
-        Write-Host "   Status: $status (verificação $contador)" -ForegroundColor Gray
-        
-        if ($status -eq 'Failed') {
-            throw "A busca falhou. Verifique os parâmetros informados."
-        }
-        
-        Start-Sleep -Seconds 10
-    } while ($status -ne 'Completed')
-
-    # Verifica resultados da busca
-    $searchResults = Get-ComplianceSearch -Identity $searchName
-    $itemCount = $searchResults.Items
+    # Etapa 2: Conectar aos serviços
+    Connect-M365Services
     
-    Write-Host "4. Busca concluída!" -ForegroundColor Green
-    Write-Host "   Itens encontrados: $itemCount" -ForegroundColor White
+    # Etapa 3: Executar remoção
+    Remove-EmailBySearch
     
-    if ($itemCount -eq 0) {
-        Write-Host "Nenhum e-mail encontrado com os critérios especificados." -ForegroundColor Yellow
-        # Remove a busca vazia
-        Remove-ComplianceSearch -Identity $searchName -Confirm:$false
-        exit
-    }
-
-    # Executa a remoção
-    Write-Host "5. Executando remoção (SoftDelete)..." -ForegroundColor White
-    New-ComplianceSearchAction -SearchName $searchName -Purge -PurgeType SoftDelete -Confirm:$false -ErrorAction Stop
-
-    Write-Host ""
-    Write-Host "=== OPERAÇÃO CONCLUÍDA ===" -ForegroundColor Green
-    Write-Host "✓ $itemCount e-mail(s) movido(s) para Itens Recuperáveis"
-    Write-Host "✓ Nome da busca: $searchName"
-    Write-Host "✓ Os e-mails foram removidos das caixas dos usuários"
-    Write-Host ""
-    Write-Host "Nota: Para recuperar os e-mails, use o nome da busca: $searchName" -ForegroundColor Cyan
-
 } catch {
-    Write-Host ""
-    Write-Host "ERRO: $($_.Exception.Message)" -ForegroundColor Red
-    
-    # Tenta limpar busca em caso de erro
-    try {
-        if (Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue) {
-            Remove-ComplianceSearch -Identity $searchName -Confirm:$false -ErrorAction SilentlyContinue
-            Write-Host "Busca de teste removida." -ForegroundColor Gray
-        }
-    } catch {}
+    Write-ColorMessage "Erro fatal: $($_.Exception.Message)" -Type "Error"
 }
 
 Write-Host ""
-Write-Host "Pressione qualquer tecla para sair..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-
-# --- FIM DO SCRIPT ---
+$null = Read-Host "Pressione ENTER para sair"
