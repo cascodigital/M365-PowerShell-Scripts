@@ -24,7 +24,10 @@ Colecao de scripts PowerShell para administracao Microsoft 365, Exchange Online,
 ### Monitoramento Local
 - **Procura_Eventos.ps1** - Analisa logs Windows por Event IDs com exportacao Excel
 - **monitor-ping.ps1** - Monitor de latencia ICMP com gravacao CSV em tempo real
+
+### Sistema Windows
 - **office_removal.ps1** - Remocao agressiva de instalacoes Office
+- **Fix-KeyboardLayout.ps1** - Resolve troca automatica de layout PT-BR para EN-US permanentemente
 
 ## 📋 Pre-requisitos
 
@@ -70,6 +73,13 @@ PowerShell -ExecutionPolicy Bypass -File .\NomeDoScript.ps1
 ```powershell
 .\Buscar_Logon.ps1
 # Coleta eventos 4624 e agrega por usuario, origem e horario
+```
+
+### Corrigir layout de teclado
+```powershell
+.\Fix-KeyboardLayout.ps1
+# Forca ABNT2 e desativa hotkeys de troca automatica
+# Requer logoff/login para aplicar mudancas de registro
 ```
 
 ## ⚠️ Avisos de Seguranca
