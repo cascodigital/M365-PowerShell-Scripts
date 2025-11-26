@@ -1,7 +1,13 @@
-# Fix-KeyboardLayout.ps1
 # Fixes Windows automatic keyboard layout switching from PT-BR (ABNT2) to EN-US
-# Author: Hall
+# Author: André Kitter
 # Description: Forces ABNT2 keyboard layout on English Windows installation
+############################################################
+# 1+ semana de testes bem-sucedidos, mas considerando o histórico da Microsoft 
+# em criar bugs onde não existiam, não faço promessas eternas. Funcionou? Ótimo. 
+# Falhou? Abra issue e reclame em Redmond. 
+# Desenvolvido no Linux, onde teclados sabem seu lugar.
+############################################################
+
 
 # 1. Configure Language List (Display English + Input ABNT2)
 # Creates the language object for English (US)
