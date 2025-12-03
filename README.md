@@ -20,6 +20,7 @@ Colecao de scripts PowerShell para administracao Microsoft 365, Exchange Online,
 
 ### Exchange Online
 - **Configura-CatchAll.ps1** - Cria grupo dinamico e regra catch-all para emails nao entregues
+- **Manage-SecurityDefaults-SMTP.ps1** - Ativa/desativa Security Defaults (MFA) + SMTP AUTH individual
 
 ### Monitoramento Local
 - **Procura_Eventos.ps1** - Analisa logs Windows por Event IDs com exportacao Excel
